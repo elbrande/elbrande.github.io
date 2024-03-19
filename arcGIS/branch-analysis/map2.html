@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>FDIC Bank Branch Analysis</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/dark/main.css">
+
+    <style>
+      html, body, #map {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+    </style>
+
+   <script src="https://js.arcgis.com/4.28/"></script>
+   <script src="map.js"></script>
+
+  <script>
+      document.addEventListener('DOMContentLoaded', () => {
+require([
+         "esri/config",
+         "esri/Map",
+         "esri/views/MapView",
+         "esri/layers/FeatureLayer",         
+         "esri/layers/GraphicsLayer",
+         "esri/widgets/BasemapGallery",
+         "esri/widgets/LayerList",
+         "esri/widgets/Legend",
+         "esri/widgets/Print",
+         "esri/core/reactiveUtils"
+       ], function(esriConfig, Map, MapView, FeatureLayer, GraphicsLayer, BasemapGallery, LayerList, Legend, Print, reactiveUtils) {   
+       esriConfig.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";   
+       const map = new Map({
+          basemap: "arcgis-dark-gray"
+        });
+
+        const view = new MapView({
+          map: map,
+          center: [-118.805, 34.027], // Longitude, latitude
+          zoom: 13, // Zoom level
+          container: "map" // Div element
+        });
+       });
+      });
+  </script>
+  </head>
+  <body>
+
+
+		<!---------------------------------Main--------------------------------->
+
+         <div id="map"></div>
+
+
+		<!---------------------------------END Main--------------------------------->
+
+  </body>
+</html>
