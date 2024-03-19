@@ -1,0 +1,18 @@
+{
+ "map":{"basemap":"arcgis-dark-gray","apiKey": "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT"},  
+ "view":{
+      "container":"map",
+      "center":[-96.3537,40.6698],
+      "zoom":4, 
+      "highlightOptions":{"color": "#B7AC83"}, 
+      "popup": {
+         "defaultPopupTemplateEnabled": 1,
+         "dockEnabled": 1,
+         "dockOptions": {
+            "buttonEnabled": 0,
+            "breakpoint": 0
+          }
+       }
+   },
+  "layers":[] 
+}

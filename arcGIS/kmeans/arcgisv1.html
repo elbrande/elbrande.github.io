@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>APEX arcGIS Kmeans</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/dark/main.css">    
+    <style>
+      html, body, #map {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+    
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   <script src="https://js.arcgis.com/4.26/"></script>  
+   <script src="./airports.js"></script>
+
+ <script>
+
+  
+  $(function() {
+     console.log('Ready');
+     //document.getElementById('wwvFlowForm').onsubmit = function(){return false;}; 
+     
+     //Promise.all([$.getJSON({"url": "mapConfig.json", cache: false})]).then(bbbMap.ready).catch(bbbMap.catch);
+     const map = new Map({basemap: "arcgis-topographic" });
+
+        const view = new MapView({
+          map: map,
+          center: [-118.805, 34.027], // Longitude, latitude
+          zoom: 13, // Zoom level
+          container: "map" // Div element
+        });
+  });
+  </script>
+  </head>
+  <body>
+
+      
+      <div id="map"></div>
+
+
+  </body>
+</html>

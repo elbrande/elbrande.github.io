@@ -1,0 +1,41 @@
+    'US': ('United States', (-171.791110603, 18.91619, -66.96466, 71.3577635769)),
+    
+    long -120 - -81
+    lat 34 - 48
+
+{"locations": [
+   {"geometry":{"type":"point","longitude":-78.63,"latitude":35.77}, "attributes":{"id":1,"name":"eric","group":"VA"} },
+   {"geometry":{"type":"point","longitude":-79.63,"latitude":34.77}, "attributes":{"id":2,"name":"kate","group":"VA"} },
+   {"geometry":{"type":"point","longitude":-86.18,"latitude":39.611}, "attributes":{"id":3,"name":"Faza","group":"IN"} },
+   {"geometry":{"type":"point","longitude":-86.98,"latitude":39.611}, "attributes":{"id":4,"name":"Muza","group":"IN"} }
+   
+]}
+
+//////////////////////////////////
+ function myRandom(min, max) { // min and max included 
+  return (Math.random() * (max - min + 1) + min)
+}
+
+var locations = [];
+
+for (var i = 0; i < 10; i++)    {
+  let lat = myRandom(33,50);
+  let lng = myRandom(-120,-80);
+  console.log(i, lat, lng);
+  let obj = {};
+  obj.geometry = {"type":"point","longitude":lng, "latitude":lat}
+  obj.attributes = {id: i};
+  locations.push(obj);
+  console.log(JSON.stringify(obj));
+
+}
+    
+console.log(JSON.stringify(locations)) ;
+
+ function myRandom(min, max) { // min and max included 
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+
+const rndInt = randomIntFromInterval(1, 6)
+console.log(rndInt)

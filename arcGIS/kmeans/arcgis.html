@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>ArcGIS Maps SDK for JavaScript Tutorials: Display a map</title>
+
+    <style>
+      html,
+      body,
+      #map {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+#bbbMapParameters { position: absolute; z-index:999; top: 0; bottom: 0; width: 90%;    margin: 0 auto;   height: 1px; left: 50px}
+
+#bbbLogger {
+    position: absolute;
+    right: 5px;
+    z-index: 999;
+    background-color: white;
+}      
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>    
+    <script src="https://js.arcgis.com/4.26/"></script>
+    <script src="./airports.js"></script>
+    <script src="./arcGisKmeans.js"></script>
+
+    <script>
+      $(function() {
+        console.log('ready');
+      });
+    </script>
+
+  </head>
+  <body>
+<form action="wwv_flow.accept?p_context=ut/icons/17110063106989" method="post" name="wwv_flow" id="wwvFlowForm" data-oj-binding-provider="none" novalidate  autocomplete="off">
+   <input type="hidden" name="p_flow_id" value="2165" id="pFlowId" />
+   <input type="hidden" name="p_flow_step_id" value="60" id="pFlowStepId" />
+   <input type="hidden" name="p_instance" value="17110063106989" id="pInstance" />
+   <input type="hidden" name="p_page_submission_id" value="44662908983820161866035187173140524958" id="pPageSubmissionId" />
+   <input type="hidden" name="p_request" value="" id="pRequest" /><input type="hidden" name="p_reload_on_submit" value="S" id="pReloadOnSubmit" />
+   <input type="hidden" value="ut&#x2F;icons&#x2F;17110063106989" id="pContext" /><input type="hidden" value="44662908983820161866035187173140524958" id="pSalt" />
+
+   <div id="bbbMapParameters">
+         <label for="k" title="number of clusters">K</label>
+         <input type="text" class="ui-corner-all bbbText" id="k"></input>
+         
+         <button title="Start" class="ui-button ui-widget ui-corner-all" id="startKmeans"><span class="ui-icon ui-icon-power"></span>Start</button>        
+         <button title="Step"  class="ui-button ui-widget ui-corner-all" id="stepKmeans"><span class="ui-icon ui-icon-power"></span>Step</button>
+         <button title="Run"  class="ui-button ui-widget ui-corner-all" id="runKmeans"><span class="ui-icon ui-icon-power"></span>Run</button>
+         <button title="Log"  class="ui-button ui-widget ui-corner-all" id="logger"><span class="ui-icon ui-icon-power"></span>Log</button>
+        
+  
+      </div>
+      <div id="bbbLogger"></div>
+    <div id="map"></div>
+  </body>
+</html>

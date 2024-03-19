@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>APEX arcGIS JavaScript Mashup</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/dark/main.css">
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.7/calcite.css" />
+    <style>
+      html, body, #map {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      
+      body {display: flex;}
+      #chart-container-outer {}
+      
+      #chart-container, #chart-div {height: 600px;}
+      
+      #featureTableContainer {margin: 0 50px;}
+      
+      .esri-popup--is-docked {margin-right: 55px;}
+      .esri-ui-top-left {left: 40px;}
+      .full-height {height: 600px;}
+    </style>
+
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- cedar -->
+   <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+   <script src="https://www.amcharts.com/lib/3/serial.js"></script>
+   <script src="https://unpkg.com/@esri/cedar/dist/umd/themes/amCharts/calcite.js"></script>
+   <script src="https://unpkg.com/@esri/cedar/dist/umd/cedar.js"></script>
+
+   <!-- end cedar-->
+   <script src="https://js.arcgis.com/4.25/"></script>
+	<script type="module" src="https://js.arcgis.com/calcite-components/1.0.7/calcite.esm.js"></script>
+   <script src="bbb_apex_arcgis.js"></script>
+  <script>
+
+  
+  $(function() {
+     console.log('Ready');
+     document.getElementById('wwvFlowForm').onsubmit = function(){return false;};
+     
+     Promise.all([$.getJSON({"url": "mapConfig.json", cache: false})]).then(bbbMap.ready).catch(bbbMap.catch);
+
+  });
+  </script>
+  </head>
+  <body>
+<table border="0" cellspacing="0" cellpadding="0" width="1189" style="width:892.0pt;border-collapse:collapse;" class="yiv0028892770MsoNormalTable">
+<tbody>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Power Play Team</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">First Name</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Last Name</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Team</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Birthdate</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Email #1</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Email #2</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Day PH</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border:solid windowtext 1.0pt;border-left:none;background:yellow;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Mobile PH</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Zack</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Brandenburg</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">4/12/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Kbrande77@yahoo.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(773) 875-5906</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(773) 875-5906</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Parker</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Clancy</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">6/8/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">brenda.l.bennett12@gmail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(689) 709-8686</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(609) 709-8686</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Hudson</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Freudiger</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">12/28/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">mikefreudiger@mac.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 380-9214</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 380-9470</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Henry</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Heuett</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">5/18/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">wheuett@gmail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(206) 679-6084</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(206) 679-6084</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Joseph</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Hong</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2/19/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">icheese2000@yahoo.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(443) 574-7666</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(443) 587-8644</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Everleigh</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Kao</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">7/18/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Jeaneliza@gmail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(301) 455-8922</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(301) 455-8922</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Ryan</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">King</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">1/13/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">eric.kingb1@gmail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 728-0581</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 728-0581</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Jacob</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Linden</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">4/25/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Lindamlinden@gmail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(301) 928-1031</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(301) 928-1031</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Miles</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Lu</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2/29/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">joey88.lu@gmail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(202) 384-5036</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(202) 384-5036</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Killian</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">McDonough</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">8/8/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">jmcdonough531@googlemail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 254-3210</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 254-3210</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Sami</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Mendenhall (G)</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">6/14/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">pawskisses4u@gmail.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(217) 246-1096</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 282-9093</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Matthew</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Nunes</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2/22/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Scarlett_nunes@yahoo.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(571) 217-6062</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(571) 317-9660</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Grayson</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">On</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">3/29/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">richardon@mac.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(301) 452-5070</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(301) 452-5070</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Lucas</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Pshenichnikov</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">12/13/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">vadim@dotcenter.net</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(202) 413-3369</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(202) 413-3369</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Nolan</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Rouser</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">10/11/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">dave@rouser.org</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 819-6504</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(703) 819-6504</span> 
+</td>
+</tr>
+<tr style="min-height:15.0pt;">
+<td width="115" nowrap="" valign="bottom" style="width:86.0pt;border:solid windowtext 1.0pt;border-top:none;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="131" nowrap="" valign="bottom" style="width:98.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Harrison</span> 
+</td>
+<td width="105" nowrap="" valign="bottom" style="width:79.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">Steele</span> 
+</td>
+<td width="99" nowrap="" valign="bottom" style="width:74.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">2012</span> 
+</td>
+<td width="75" nowrap="" valign="bottom" style="width:56.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">7/2/2012</span> 
+</td>
+<td width="288" nowrap="" valign="bottom" style="width:3.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">buffalogirlva@yahoo.com</span> 
+</td>
+<td width="185" nowrap="" valign="bottom" style="width:139.0pt;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">&nbsp;</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(202) 320-3765</span> 
+</td>
+<td width="96" nowrap="" valign="bottom" style="width:1.0in;border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt;min-height:15.0pt;">
+<span style="color:black;">(202) 320-3765</span> 
+</td>
+</tr>
+</tbody>
+</table>
+  </body>
+</html>

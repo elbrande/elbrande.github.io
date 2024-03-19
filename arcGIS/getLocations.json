@@ -1,0 +1,7 @@
+{"locations": [
+   {"geometry":{"type":"point","longitude":-78.63,"latitude":35.77}, "attributes":{"id":1,"name":"eric","group":"VA"} },
+   {"geometry":{"type":"point","longitude":-79.63,"latitude":34.77}, "attributes":{"id":2,"name":"kate","group":"VA"} },
+   {"geometry":{"type":"point","longitude":-86.18,"latitude":39.611}, "attributes":{"id":3,"name":"Faza","group":"IN"} },
+   {"geometry":{"type":"point","longitude":-86.98,"latitude":39.611}, "attributes":{"id":4,"name":"Muza","group":"IN"} }
+   
+]}

@@ -1,0 +1,50 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+  <script type="module" src=https://js.arcgis.com/calcite-components/1.0.7/calcite.esm.js></script>
+  <link rel="stylesheet" type="text/css" href=https://js.arcgis.com/calcite-components/1.0.7/calcite.css />
+</head>
+
+<body>
+
+<calcite-shell>
+    <calcite-shell-panel id="panel-start" slot="panel-start" position="start">
+        <calcite-action-bar slot="action-bar">
+            <calcite-action-group>
+                <calcite-action text="Save" icon="save" indicator></calcite-action>
+                <calcite-action text-enabled icon="map" text="New" slot="menu-actions"></calcite-action>
+            </calcite-action-group>
+        </calcite-action-bar>
+        <calcite-panel heading="Panel 1">
+            <calcite-block heading="Block 1" collapsible></calcite-block>
+        </calcite-panel>
+    </calcite-shell-panel>
+
+      <calcite-panel heading="Charts" closable>
+         <calcite-action slot="header-actions-end" text="Save" icon="save" indicator></calcite-action>
+         <calcite-action slot="header-actions-end" text-enabled icon="map" text="New" slot="menu-actions"></calcite-action>
+      </calcite-panel>    
+
+    <calcite-shell-panel slot="panel-end" position="end">
+        <calcite-action-bar slot="action-bar">
+            <calcite-tooltip slot="expand-tooltip" label="tooltip" disable-pointer>
+                Add layers
+            </calcite-tooltip>
+            <calcite-action-group>
+                <calcite-action text="Layer properties" icon="sliders-horizontal"></calcite-action>
+                <calcite-action text="Styles" icon="shapes"></calcite-action>
+                <calcite-action text="Filter" icon="layer-filter"></calcite-action>
+                <calcite-action text="Configure pop-ups" icon="popup" active></calcite-action>
+            </calcite-action-group>
+        </calcite-action-bar>
+        <calcite-panel heading="Panel 2">
+            <calcite-block heading="Block 1" collapsible></calcite-block>
+        </calcite-panel>
+    </calcite-shell-panel>
+</calcite-shell>
+
+</body>
+
+</html>
