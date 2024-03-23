@@ -580,13 +580,79 @@ bbbMap.xxxgetBranchInfo = async (ids) => {
 
 };
 
-bbbMap.buildFeatureTable = (layer) => {
+bbbMap.addFeatureSearch = function (table) {
+   let i = table.menu.items;
+   let s = {
+      label: "Search Features",
+      autoCloseMenu: true,
+      iconClass: "esri-icon-search",
+      clickFunction: function (event) {
+         console.log("Search Clicked")
+         
+         //bbbMap.removeFeatureSearch();
+         
+         searchContainer = document.createElement('div');
+         searchContainer.innerHTML = "Press Enter to Search";
+         searchContainer.id = "featureSearchContainer";
+         searchBox = document.createElement("calcite-input-text");
+         let go =  document.createElement("calcite-button");
+         go.innerHTML = "Go";
+         go.slot = "action";
+         
+         let btn = document.createElement("calcite-button");
+         btn.innerHTML = "X";
+         btn.slot = "action";
+         btn.onclick = (e) => {
+           table.layer.definitionExpression = "";
+           //bbbMap.removeFeatureSearch();
+         };
+         
+         searchBox.appendChild(btn);
+         searchContainer.appendChild(searchBox);
+         searchBox.placeholder = "Search Features";
+         bbbMap.searchContainer = searchContainer;
+         searchContainer.addEventListener("calciteInputTextChange", async (e) => {
+           let searchString = e.target.value.toUpperCase();
+           searchString = bbbMap.sanitizeInputs(searchString);
+           
+           let f = table.columns.items.filter(x => !x.hidden && x.field.type === "string" || x.field.type === "double" || x.field_type === "integer");
+           let q = "", c = "";
+           f.forEach((x, i) => {
+              c = i > 0 ? "or" : "";
+              q += x.field.type === "string" ? ` ${c} UPPER(${x.field_name}) like '%${searchString}%' ` : ` ${c} ${x.field_name} = '${searchString}' `;
+              
+           });
+           
+           table.layer.definitionExpression = q;
+           
+           let response = await table.layer.queryExtent();
+           if (response.count > 0 ) {
+              const g = bbbMap.esri.geometryEngine.geodesicBuffer(resonse.extent, 3, "miles");
+              bbbMap.view.goTo(g);
+           } else {
+              bbbMap.showWarning("No Features Found", `Could not find a feature/row containing ${searchString}.  Please try again`);
+           }
+         };
+         
+      }     
+   };
+   
+   i.unshift(s);
+   
+   const buttonMenu = new bbbMap.esri.ButtonMenu ({
+      iconClass: "esri-icon-left",
+      items: i
+   });
+   
+   table.menuConfig = buttonMenu;
+}
+bbbMap.buildFeatureTable = async (layer) => {
    console.log('buildFeatureTable', layer);
 
    const c = document.createElement('div');
    c.id = layer.id;
 
-   const featureTable = new bbbMap.esri.FeatureTable({
+   const featureTable = await new bbbMap.esri.FeatureTable({
       id: layer.id,
       view: bbbMap.view,
       highlightEnabled: true,
@@ -596,10 +662,15 @@ bbbMap.buildFeatureTable = (layer) => {
       container: c
    });
 
-
+   
    console.log(layer.id, 'feature table complete');
    bbbMap.featureTables.push(featureTable);
    bbbMap.showFeatureTable(layer.id);
+   bbbMap.addFeatureSearch(featureTable);
+   
+   
+   
+   
 
    featureTable.highlightIds.on('change', async (event) => {
       console.log(layer.id, 'feature table item selected', event);
@@ -608,20 +679,6 @@ bbbMap.buildFeatureTable = (layer) => {
             event.target.items.map(x => id === x ? null : event.target.remove(x));
             let b = await bbbMap.getLayerInfo(id, featureTable.layer);
             bbbMap.view.openPopup({features: b.features});
-      //if (event.target.items.length > 0) {
-         /*
-         if (featureTable.layer.id === bbbMap.branchSearchID) {
-            let id = event.added[0];
-            event.target.items.map(x => id === x ? null : event.target.remove(x));
-            let b = await bbbMap.getBranchInfo([id]);
-            bbbMap.view.openPopup({features: b.features});
-         } else if (featureTable.layer.id === bbbMap.nearbyBranchesID) {
-            let id = event.added[0];
-            event.target.items.map(x => id === x ? null : event.target.remove(x));
-            let b = await bbbMap.getNearbyBranchInfo([id]);
-            //let b = await bbbMap.getBranchInfo([event.target.items]);
-            bbbMap.view.openPopup({features: b.features});
-         }*/
       } else {
          bbbMap.view.closePopup();
       }
