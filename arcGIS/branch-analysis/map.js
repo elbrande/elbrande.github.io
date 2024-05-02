@@ -1,4 +1,3 @@
-/*jslint esnext:true*/
   const bbbMap= {};
   bbbMap.versionNumber = '2.1.1.0';
   bbbMap.ui = {};
@@ -7,7 +6,7 @@
   bbbMap.banks = [];
 
 bbbMap.sanitizeInputs = (i) => {
-   return String(i).replace(/[^a-zA-Z0-9 ]/g, '');
+   return String(i).replace(/[^a-zA-Z0-9 ]/g, '').trim();
 };
 
 bbbMap.getDataSourceConfig = () => {
@@ -16,11 +15,12 @@ bbbMap.getDataSourceConfig = () => {
    bbbMap.branchService = "https://banks.data.fdic.gov/api/locations?fields=CERT,ADDRESS,LATITUDE,LONGITUDE,NAME,OFFNAME%2CUNINUM%2CSERVTYPE%2CRUNDATE%2CCITY%2CSTNAME%2CZIP%2CCOUNTY&sort_by=NAME&sort_order=DESC&limit=5000&offset=0&format=json&download=false&filename=data_file";
    bbbMap.censusTractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Total_Population_Boundaries/FeatureServer/2";
    bbbMap.nearbyBranchService = "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/FDIC_InsuredBanks/FeatureServer/0";
-   bbbMap.branchService = "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/FDIC_InsuredBanks/FeatureServer/0";
+   bbbMap.branchService       = "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/FDIC_InsuredBanks/FeatureServer/0";
    //https://livingatlas.arcgis.com/en/browse/?q=acs%20current#q=acs+current&d=2
    //https://hifld-geoplatform.opendata.arcgis.com/datasets/geoplatform::fdic-insured-banks/explore
 };
-
+//https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/FDIC_InsuredBanks/FeatureServer/0/
+//https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/FDIC_InsuredBanks/FeatureServer/0"
 bbbMap.getLayerConfig = () => {
    bbbMap._config.layers = [];
 
@@ -62,8 +62,9 @@ require([
          "esri/widgets/Search",
          "esri/core/reactiveUtils",
          "esri/geometry/geometryEngine",
-         "esri/geometry/support/webMercatorUtils"
-       ], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils) =>
+         "esri/geometry/support/webMercatorUtils",
+         "esri/widgets/FeatureTable/Grid/support/ButtonMenu",
+       ], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, ButtonMenu) =>
 
       (async () => {
        esriConfig.apiKey = bbbMap.apiKey;
@@ -75,6 +76,7 @@ require([
        bbbMap.esri.FeatureLayer = FeatureLayer;
        bbbMap.esri.FeatureTable = FeatureTable;
        bbbMap.esri.Graphic = Graphic;
+       bbbMap.esri.ButtonMenu = ButtonMenu;
 
        console.log('Building Map');
 
@@ -101,8 +103,11 @@ require([
             },
             container: "map"
          });
+         
+         let darkMode = localStorage.getItem('darkMode') === 'false' ? false : true;   
+         bbbMap.ui.setMode(darkMode);
 
-         bbbMap.layerListWidget = new LayerList({view: bbbMap.view, selectionEnabled: true, container: "sublayers-container" });
+         bbbMap.layerListWidget = new LayerList({view: bbbMap.view, dragEnabled: true, container: "sublayers-container" });
          bbbMap.basemapGallaryWidget = new BasemapGallery({view: bbbMap.view, container: "basemaps-container"});
          bbbMap.legendWidget = new Legend({view: bbbMap.view, container: "legend-container"});
          bbbMap.printWidget = new Print({view: bbbMap.view, container: "print-container"});
@@ -172,6 +177,7 @@ require([
           bbbMap.view.when((view)=> {
              console.log('Map.view created', view);
              bbbMap.view.padding = {left: 45};
+             
           });
 
        })()); //end require
@@ -179,6 +185,8 @@ require([
 
 bbbMap.ui.init = () => {
    console.log('ui.init');
+
+   
    bbbMap.formats = {};
    bbbMap.formats.USDollar = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'});
    bbbMap._bufferSize = 1.2;
@@ -275,18 +283,23 @@ bbbMap.ui.init = () => {
    
    document.getElementById("darkModeToggle").addEventListener("calciteSwitchChange", (e) => {
       console.log('darkModeToggle clicked', e.target.tagName, e);
-          document.body.classList.toggle("calcite-mode-dark");
+         /* document.body.classList.toggle("calcite-mode-dark");
           // ArcGIS Maps SDK theme
           const dark = document.getElementById("theme-dark");
           const light = document.getElementById("theme-light");
           dark.disabled = !dark.disabled;
           light.disabled = !light.disabled;
           // ArcGIS Maps SDK basemap
-          bbbMap.map.basemap = dark.disabled ? "gray-vector" : "dark-gray-vector";      
+          bbbMap.map.basemap = dark.disabled ? "gray-vector" : "dark-gray-vector";   
+          */
+          localStorage.setItem("darkMode", e.target.checked);
+          bbbMap.ui.setMode(e.target.checked);
+          
    });   
 
    //resize map and table based on action bar
    document.addEventListener("calciteActionBarToggle", (e) => {
+      console.log("calciteActionBarToggle", e);
       bbbMap.ui.actionBarExpanded = !bbbMap.ui.actionBarExpanded;
       bbbMap.view.padding = {left: bbbMap.ui.actionBarExpanded ? 155 : 45};
       document.getElementById('featureTableContainer').style.marginLeft = bbbMap.ui.actionBarExpanded ? "170px" : "50px";
@@ -300,22 +313,44 @@ bbbMap.ui.init = () => {
          bbbMap.ui.bankSearchModal.open = true;
       }
    });
-
+   
    //handle pagination
-   bbbMap.ui.bankSearchPagination.addEventListener("calcitePaginationChage", ({target}) => {
-      console.log('calcitePaginationChage');
+   bbbMap.ui.bankSearchPagination.addEventListener("calcitePaginationChange", ({ target }) => {
+      console.log('calcitePaginationChange', bbbMap.banks, target.startItem, target.pageSize);
       let paginatedBanks = bbbMap.banks.slice(
          target.startItem -1,
-         target.startItem - 1 + target.pagesize
+         target.startItem - 1 + target.pageSize
        );
+       
+       console.log("paginatedBanks", paginatedBanks);
 
        bbbMap.ui.bankSearchCardContainer.innerHTML = "";
-       paginatedBank.forEach((bank) => bbbMap.ui.createBankSearchCard(bank));
-      if (cnt) {
-         bbbMap.ui.bankSearchModal.open = true;
-      }
+       paginatedBanks.forEach((bank) => bbbMap.ui.createBankSearchCard(bank));
+      
    });
 };
+
+bbbMap.ui.setMode = function (darkMode = true) {
+   
+   console.log('setMode.  darkMode', darkMode);
+   
+   const dark = document.getElementById("theme-dark");
+   const light = document.getElementById("theme-light");   
+   if (darkMode) {
+      document.body.classList.add("calcite-mode-dark");
+      dark.disabled = false;
+      light.disabled = true;    
+      bbbMap.map.basemap = "dark-gray-vector";      
+      
+   } else {
+      document.body.classList.remove("calcite-mode-dark");
+      dark.disabled = true;
+      light.disabled = false;          
+      bbbMap.map.basemap = "gray-vector";   
+   }
+   
+   document.getElementById("darkModeToggle").checked = darkMode;
+}
 
 bbbMap.ui.initSearch = () => {
    console.log('initSearch');
@@ -396,7 +431,7 @@ bbbMap.ui.doBankSearch = (banks) => {
       bbbMap.ui.bankSearchPagination.style.visibility = "hidden";
 
       if (bbbMap.ui.bankSearchPagination.totalItems > bbbMap.ui.bankSearchPagination.pageSize) {
-         bbbMap.ui.bankSearchPagination.style.visibility = "visbile";
+         bbbMap.ui.bankSearchPagination.style.visibility = "visible";
       }
       console.log('paginated search results');
       banks.forEach((bank) => bbbMap.ui.createBankSearchCard(bank));
@@ -423,6 +458,7 @@ bbbMap.ui.createBankSearchCard = (item) => {
       searchBtn.width = 'full';
 
       searchBtn.onclick = (e) => {
+         console.log("searchBtn.onclick", e);
          bbbMap.bankName = item.NAME;
          bbbMap.cert = item.CERT;
 
@@ -447,7 +483,7 @@ bbbMap.getBranches = async (cert) => {
      returnGeometry: true
    };
    //['CERT','NAMEFULL','BRNUM','UNINUMBR','NAMEBR','ADDRESBR','GEOCODE_CENSUS_TRACT','STATUS','SCORE','REPDTE'],
-
+//bbbMap.branchFields
    console.log('getBranches Query', getBranchesQuery);
 
    const results = await bbbMap.branchReferenceLayer.queryFeatures(getBranchesQuery);
@@ -535,7 +571,6 @@ bbbMap.removeFeatureLayer = (layerId) => {
 
 bbbMap.xxxgetNearbyBranchInfo = async (ids) => {
       console.log('getBranchInfo', ids);
-      let id = ids[0];
       let branchLayer = bbbMap.map.layers.items.find(l => l.id === bbbMap.nearbyBranchesID);
 
       const branchQuery = {objectIds: ids, returnGeometry: true };
@@ -559,7 +594,7 @@ bbbMap.getLayerInfo = async (id, layer) => {
             
 bbbMap.xxxgetBranchInfo = async (ids) => {
       console.log('getBranchInfo', ids);
-      let id = ids[0];
+
       let branchLayer = bbbMap.map.layers.items.find(l => l.id === bbbMap.branchSearchID);
 
       const branchQuery = {         
@@ -580,16 +615,25 @@ bbbMap.xxxgetBranchInfo = async (ids) => {
 
 };
 
+bbbMap.removeFeatureSearch = function () {
+   if (bbbMap.searchContainer) {
+      bbbMap.view.ui.remove(bbbMap.searchContainer);
+      bbbMap.searchContainer.remove();
+   }
+};
+
 bbbMap.addFeatureSearch = function (table) {
    let i = table.menu.items;
+   console.log('addFeatureSearch', i);
+
    let s = {
       label: "Search Features",
       autoCloseMenu: true,
       iconClass: "esri-icon-search",
-      clickFunction: function (event) {
-         console.log("Search Clicked")
+      clickFunction: function (e) {
+         console.log("Search Clicked", e);
          
-         //bbbMap.removeFeatureSearch();
+         bbbMap.removeFeatureSearch();
          
          searchContainer = document.createElement('div');
          searchContainer.innerHTML = "Press Enter to Search";
@@ -603,8 +647,9 @@ bbbMap.addFeatureSearch = function (table) {
          btn.innerHTML = "X";
          btn.slot = "action";
          btn.onclick = (e) => {
-           table.layer.definitionExpression = "";
-           //bbbMap.removeFeatureSearch();
+            console.log('Search X click', e);
+            table.layer.definitionExpression = "";
+            bbbMap.removeFeatureSearch();
          };
          
          searchBox.appendChild(btn);
@@ -618,25 +663,42 @@ bbbMap.addFeatureSearch = function (table) {
            let f = table.columns.items.filter(x => !x.hidden && x.field.type === "string" || x.field.type === "double" || x.field_type === "integer");
            let q = "", c = "";
            f.forEach((x, i) => {
+              console.log(x.field.type, x.field.name, i);
               c = i > 0 ? "or" : "";
-              q += x.field.type === "string" ? ` ${c} UPPER(${x.field_name}) like '%${searchString}%' ` : ` ${c} ${x.field_name} = '${searchString}' `;
+              q += x.field.type === "string" ? ` ${c} UPPER(${x.field.name}) like '%${searchString}%' ` : ` ${c} ${x.field.name} = '${searchString}' `;
               
            });
            
+           console.log('Applying definitionExpression', q);
            table.layer.definitionExpression = q;
            
            let response = await table.layer.queryExtent();
+           console.log("Response", response);
            if (response.count > 0 ) {
-              const g = bbbMap.esri.geometryEngine.geodesicBuffer(resonse.extent, 3, "miles");
-              bbbMap.view.goTo(g);
-           } else {
-              bbbMap.showWarning("No Features Found", `Could not find a feature/row containing ${searchString}.  Please try again`);
+              bbbMap.view.goTo(response.extent);
            }
-         };
+           /*
+           table.layer.queryExtent().then((response) => {
+               console.log("Response", response);
+               if (response.count > 0 ) {
+                  //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(response.extent, 3, "miles");
+                  let area = bbbMap.esri.geometryEngine.geodesicArea(response.extent, "square-miles");
+                  console.log('featureSearch Extent', area);
+                  bbbMap.view.goTo(response.extent);
+                  //console.log('zoom to ', geom);
+                  //bbbMap.view.goTo(geom);
+               } else {
+                  console.log("warning");
+                  //bbbMap.showWarning("No Features Found", `Could not find a feature/row containing ${searchString}.  Please try again`);
+               }
+           });
+*/
+         });
          
-      }     
+         bbbMap.view.ui.add(searchContainer, "bottom-right");
+      } 
    };
-   
+
    i.unshift(s);
    
    const buttonMenu = new bbbMap.esri.ButtonMenu ({
@@ -645,14 +707,15 @@ bbbMap.addFeatureSearch = function (table) {
    });
    
    table.menuConfig = buttonMenu;
-}
-bbbMap.buildFeatureTable = async (layer) => {
+};
+
+bbbMap.buildFeatureTable = (layer) => {
    console.log('buildFeatureTable', layer);
 
    const c = document.createElement('div');
    c.id = layer.id;
 
-   const featureTable = await new bbbMap.esri.FeatureTable({
+   const featureTable = new bbbMap.esri.FeatureTable({
       id: layer.id,
       view: bbbMap.view,
       highlightEnabled: true,
@@ -662,15 +725,13 @@ bbbMap.buildFeatureTable = async (layer) => {
       container: c
    });
 
-   
-   console.log(layer.id, 'feature table complete');
-   bbbMap.featureTables.push(featureTable);
-   bbbMap.showFeatureTable(layer.id);
-   bbbMap.addFeatureSearch(featureTable);
-   
-   
-   
-   
+   featureTable.when((table) => {
+      console.log(layer.id, 'feature table complete');
+      bbbMap.featureTables.push(table);
+      bbbMap.showFeatureTable(layer.id);
+      bbbMap.addFeatureSearch(table);
+   });
+
 
    featureTable.highlightIds.on('change', async (event) => {
       console.log(layer.id, 'feature table item selected', event);
@@ -701,6 +762,7 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
          console.log(layer.id, 'load complete', layerView);
          const extent = await layerView.queryExtent();
          console.log(layer.id, 'Extent', extent);
+         featureLayer._bbbLayerView = layerView;
 
          bbbMap.map.add(featureLayer);
 
@@ -739,13 +801,13 @@ bbbMap.getNearbyBranches = async (feature, d = 1.2) => {
       bbbMap.view.goTo(geom);
    
       let nearbyBranchQuery = {
-      where: "BKMO=0",
+      
       geometry: geom,
       spatialRelationship: "intersects",
       outFields: bbbMap.branchFields,
       returnGeometry: true
       };
-   
+   //where: "BKMO=0",
       console.log('nearbyBranch Query', nearbyBranchQuery);
    
       const results = await bbbMap.branchReferenceLayer.queryFeatures(nearbyBranchQuery);
@@ -790,7 +852,7 @@ bbbMap.getNearbyTracts = async (feature, d = 1.2) => {
       g.add(new bbbMap.esri.Graphic(geom, bbbMap.bufferedSymbol));
    
       //zoom to buffer
-      bbbMap.view.goTo(geom);
+      //bbbMap.view.goTo(geom);
       
       let censusTractQuery = {
          geometry: geom,
@@ -818,7 +880,7 @@ bbbMap.xxxgetCensusTracts = async (ids) => {
 
    let branchLayer = bbbMap.map.layers.items.find(l => l.id === bbbMap.branchSearchID);
 
-   branchId = ids.join(',');
+   let branchId = ids.join(',');
 
    const branchQuery = {
       where: `UNINUMBR in (${branchId})`,
@@ -862,7 +924,7 @@ bbbMap.showCensusTracts = (results) => {
    console.log('census',layerInfo);
    const layer = Object.assign({}, layerInfo, {fields: results.fields, source: results.features});
 
-   bbbMap.buildFeatureLayer(layer, true, false);
+   bbbMap.buildFeatureLayer(layer, true, true);
 };
 
 bbbMap.ui.setHeader = (branches = []) => {
@@ -889,6 +951,7 @@ bbbMap.ui.setHeader = (branches = []) => {
 
 bbbMap.showFeatureContainer = (on = true) => {
    let c = bbbMap.featureTableContainer;
+
    try {
       //if (bbbMap.featureTables.length > 0) {
          on ? bbbMap.appContainer.appendChild(c) : bbbMap.appContainer.removeChild(c);
@@ -906,7 +969,7 @@ bbbMap.errorHandler = (e) => {
 
 bbbMap.showFeatureTable = (id) => {
    let c = bbbMap.featureTableContainer;
-
+   bbbMap.removeFeatureSearch();
    while (c.hasChildNodes()) {
       c.removeChild(c.firstChild);
    }
@@ -964,4 +1027,5 @@ bbbMap.bufferedSymbol= {
     }
 };
 
-bbbMap.branchFields = ['CERT','NAMEFULL','BRNUM','UNINUMBR','NAMEBR','ADDRESBR','DEPSUMBR','CBSABR','CBSANAMB','STCNTYBR','GEOCODE_CENSUS_TRACT','STATUS','SCORE','x','y','REPDTE'];
+//bbbMap.branchFields = ['CERT','NAMEFULL','BRNUM','UNINUMBR','NAMEBR','ADDRESBR','DEPSUMBR','CBSABR','CBSANAMB','STCNTYBR','GEOCODE_CENSUS_TRACT','STATUS','SCORE','x','y','REPDTE'];
+bbbMap.branchFields = ['CERT','NAME','OFFNUM','UNINUM','OFFNUM','ADDRESS','CBSA','CBSA_NO','CBSA_METRO_NAME','STNAME','CITY','COUNTY','STCNTY','SERVTYPE','LATITUDE','LONGITUDE','RUNDATE'];
