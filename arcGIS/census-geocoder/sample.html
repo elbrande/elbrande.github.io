@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSONP Geocoding Example</title>
+</head>
+<body>
+    <h1>Geocoding Example</h1>
+    <p>Check the console for the geocoding response.</p>
+    <script>
+        // Function to perform JSONP request
+        function jsonpRequest(url) {
+            return new Promise((resolve, reject) => {
+                // Create a unique callback name
+                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+
+                // Define the callback function
+                window[callbackName] = function(data) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    resolve(data);
+                };
+
+                // Create the script tag
+                const script = document.createElement('script');
+                script.src = `${url}&callback=${callbackName}`;
+                script.onerror = () => {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    reject(new Error(`JSONP request to ${url} failed`));
+                };
+
+                // Append the script tag to the body
+                document.body.appendChild(script);
+            });
+        }
+
+        // Asynchronous function to perform the geocoding request
+        async function geocodeAddress(address) {
+            const encodedAddress = encodeURIComponent(address);
+            
+            const url = `https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?address=${encodedAddress}&vintage=Current_Current&benchmark=Public_AR_Current&format=jsonp`;
+            try {
+                const response = jsonpRequest(url);
+                console.log('Geocode response:', response);
+                return response;
+            } catch (error) {
+                console.error('Geocode error:', error);
+                
+            }
+        }
+
+        // Example usage
+        let r = geocodeAddress('1600 Pennsylvania Ave NW, Washington, DC 20500').then((v) => {
+         console.log('then',v);
+        });
+        
+        console.log('r', r);
+    </script>
+</body>
+</html>
