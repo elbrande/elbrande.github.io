@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Custom Print Task</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.29/">
+  <style>
+    html, body, #viewDiv {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #printButton {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+  <button id="printButton">Print Map</button>
+  <div id="viewDiv"></div>
+  <script src="print.js"></script>
+</body>
+</html>

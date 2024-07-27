@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+<body>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script>
+    var stats = 'B01001_001E,B17001_002E';
+    var census = 'http://api.census.gov/data/2015/acs/acs1?get=NAME,' + stats + '&for=urban+area:*';
+    var headerLabels = ['Name', 'Population', 'Poverty', '%'];
+    var numberFormat = d3.format(',');
+    d3.json(census, function(response) {
+      console.log('json', response);
+      var table = d3.select('body').append('table');
+      var thead = table.append('thead').append('tr');
+      var tbody = table.append('tbody');
+      // First item in response array is an array of column labels.
+      // Not user-friendly so throw them away.
+      response.shift();
+      response.forEach(function(row) {
+        // Calculate percentage below the poverty line.
+        row.push(((row[2] / row[1]) * 100).toFixed(2));
+        // Remove the urban area number identifier.
+        row.splice(3,1);
+      });
+      thead.selectAll('th')
+        .data(headerLabels)
+        .enter()
+        .append('th')
+        .text(function(d) { return d; });
+      tbody.selectAll('tr')
+        .data(response)
+        .enter()
+        .append('tr')
+          .selectAll('td')
+          .data(function(d) { return d; })
+          .enter()
+          .append("td").text(function(d, i) {
+            if ( i === 1 || i === 2 ) {
+              return numberFormat(d);
+            } else {
+              return d;
+            }
+          });
+    });
+  </script>
+</body>
+</html>
