@@ -38,6 +38,7 @@ bbbMap.getLayerConfig = () => {
 bbbMap.init = () => {
    console.log('bbbMap.init');
    bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
+   bbbMap.goToOptions = {animate: true, animationMode: "auto", duration: 1000, maxDuration: 2000, easing: "ease"};
    bbbMap.getDataSourceConfig();
    bbbMap.getLayerConfig();
    bbbMap.initMap();
@@ -623,13 +624,14 @@ bbbMap.removeFeatureSearch = function () {
 };
 
 bbbMap.addFeatureSearch = function (table) {
-   let i = table.menu.items;
-   console.log('addFeatureSearch', i);
+  // let i = table.menu.items;
+   console.log('addFeatureSearch', table);
 
    let s = {
       label: "Search Features",
       autoCloseMenu: true,
-      iconClass: "esri-icon-search",
+      //iconClass: "esri-icon-search",
+      icon: "search",
       clickFunction: function (e) {
          console.log("Search Clicked", e);
          
@@ -675,7 +677,7 @@ bbbMap.addFeatureSearch = function (table) {
            let response = await table.layer.queryExtent();
            console.log("Response", response);
            if (response.count > 0 ) {
-              bbbMap.view.goTo(response.extent);
+              bbbMap.view.goTo(response.extent, bbbMap.goToOptions);
            }
            /*
            table.layer.queryExtent().then((response) => {
@@ -699,14 +701,15 @@ bbbMap.addFeatureSearch = function (table) {
       } 
    };
 
-   i.unshift(s);
+   //i.unshift(s);
    
-   const buttonMenu = new bbbMap.esri.ButtonMenu ({
-      iconClass: "esri-icon-left",
-      items: i
-   });
+   //const buttonMenu = new bbbMap.esri.ButtonMenu ({
+      //iconClass: "esri-icon-left",
+      //items: i
+   //});
    
-   table.menuConfig = buttonMenu;
+   //table.menuConfig = buttonMenu;
+   table.menuConfig = {items: [s]};
 };
 
 bbbMap.buildFeatureTable = (layer) => {
@@ -771,7 +774,7 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
          }
 
          if (zoom) {
-            bbbMap.view.goTo(extent);
+            bbbMap.view.goTo(extent, bbbMap.goToOptions);
          }
    }
 };
@@ -794,11 +797,13 @@ bbbMap.getNearbyBranches = async (feature, d = 1.2) => {
       bbbMap.ui.openPanel(bbbMap.nearbyBranchesID);
    
       console.log('Getting buffered shape', bbbMap.selectedBranchFeature);
-      let geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedBranchFeature.geometry, d, 'miles');
-   
+      
+      const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedBranchFeature.geometry, d, 'miles');
+      const graphic = new bbbMap.esri.Graphic({geometry: geom, symbol: bbbMap.bufferedSymbol});
       g.removeAll();
-      g.add(new bbbMap.esri.Graphic(geom, bbbMap.bufferedSymbol));
-      bbbMap.view.goTo(geom);
+      g.add(graphic);
+
+      bbbMap.view.goTo(geom, bbbMap.goToOptions);
    
       let nearbyBranchQuery = {
       
