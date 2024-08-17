@@ -698,8 +698,8 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
         const layerView = await featureLayer.load();
 
         console.log(layer.id, "load complete", layerView);
-        const extent = await layerView.queryExtent();
-        console.log(layer.id, "Extent", extent);
+        const result = await layerView.queryExtent();
+        console.log(layer.id, "Extent", result);
         featureLayer._bbbLayerView = layerView;
 
         bbbMap.map.add(featureLayer);
@@ -709,7 +709,7 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
         }
 
         if (zoom) {
-            bbbMap.view.goTo(extent, bbbMap.goToOptions);
+            bbbMap.view.goTo(result.extent, bbbMap.goToOptions);
         }
     }
 };
