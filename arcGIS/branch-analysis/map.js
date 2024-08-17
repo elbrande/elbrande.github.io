@@ -308,16 +308,19 @@ bbbMap.ui.setMode = function (darkMode = true) {
 
     const dark = document.getElementById("theme-dark");
     const light = document.getElementById("theme-light");
+
     if (darkMode) {
         document.body.classList.add("calcite-mode-dark");
         dark.disabled = false;
         light.disabled = true;
         bbbMap.map.basemap = "dark-gray-vector";
+        document.querySelector(".esri-ui").classList.add("calcite-mode-dark");
     } else {
         document.body.classList.remove("calcite-mode-dark");
         dark.disabled = true;
         light.disabled = false;
         bbbMap.map.basemap = "gray-vector";
+        document.querySelector(".esri-ui").classList.remove("calcite-mode-dark");
     }
 
     document.getElementById("darkModeToggle").checked = darkMode;
@@ -959,10 +962,10 @@ bbbMap.ui.closePanel = (panel) => {
 
 bbbMap.bufferedSymbol = {
     type: "simple-fill",
-    color: [255, 255, 0, 0.1],
+    color: [255, 255, 0, 0.05],
     outline: {
         color: [255, 255, 0, 0.3],
-        width: 0,
+        width: 0.5,
     },
 };
 
