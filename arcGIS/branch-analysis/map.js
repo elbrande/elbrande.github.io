@@ -136,7 +136,7 @@ bbbMap.initMap = () => {
                             lng = bbbMap.view.popup.selectedFeature.geometry.centroid.longitude;
                         }
                         console.log("Opening google", lat, lng);
-                        window.open(`https://www.google.com/maps/search/?api1&query=${lat},${lng}`, "_blank");
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, "_blank");
                     }
                 }
             );
