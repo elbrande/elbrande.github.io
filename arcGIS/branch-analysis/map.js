@@ -785,10 +785,12 @@ bbbMap.getNearbyTracts = async (feature, d = 1.2) => {
         bbbMap.ui.openPanel(bbbMap.censusTractID);
 
         //Create buffers around the buffers and return the union since more than one branch can be selected
-        let geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedTractFeature.geometry, d, "miles");
+        const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedTractFeature.geometry, d, "miles");
+        const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
 
         g.removeAll();
-        g.add(new bbbMap.esri.Graphic(geom, bbbMap.bufferedSymbol));
+        g.add(graphic);
+        //g.add(new bbbMap.esri.Graphic(geom, bbbMap.bufferedSymbol));
 
         //zoom to buffer
         //bbbMap.view.goTo(geom);
@@ -796,6 +798,7 @@ bbbMap.getNearbyTracts = async (feature, d = 1.2) => {
         let censusTractQuery = {
             geometry: geom,
             spatialRelationship: "intersects",
+            //spatialRelationship: "contains",
             outFields: ["OBJECTID ", "NAME", "State", "County", "ALAND", "B01001_001E", "B01001_001M", "B01001_002E", "B01001_003E", "B01001_calc_pctDependE", "B01001_calc_sexRatioE", "B01001_calc_numLT18E", "B01001_calc_pctDependE"],
             returnGeometry: true,
             returnCentroid: true,
