@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Print Example</title>
+        <script>
+            function printContent() {
+                // Calculate the screen dimensions
+                const width = window.screen.availWidth;
+                const height = window.screen.availHeight - 100;
+
+                // Create a new window with the calculated dimensions
+                const newWindow = window.open("", "_blank", `width=${width},height=${height},top=0,left=0`);
+
+                // Generate dynamic content
+                const content = `
+                <html>
+                <head>
+                    <title>Print</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        h1 { color: blue; }
+                    </style>
+                </head>
+                <body>
+                    <h1>This is dynamically generated content!</h1>
+                    <p>You can add any HTML here.</p>
+                </body>
+                </html>
+            `;
+
+                // Write the content to the new window
+                newWindow.document.write(content);
+                newWindow.document.close(); // Close the document for writing
+
+                // Wait for the content to be fully loaded before printing
+                newWindow.onload = function () {
+                    //newWindow.print(); // Trigger the print dialog
+                    //newWindow.close(); // Optionally close the window after printing
+                };
+            }
+        </script>
+    </head>
+    <body>
+        <button onclick="printContent()">Print Content</button>
+    </body>
+</html>

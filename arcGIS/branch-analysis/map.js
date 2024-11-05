@@ -31,9 +31,9 @@ bbbMap.getLayerConfig = () => {
     bbbMap.nearbyBranchesID = "nearbyBranches";
 
     //bbbMap._config.layers.push ({layerId: 1, id:"branchSearch", title:"Branch Locations",objectIdField:["*"],popupEnabled: 1, renderer: {type: "simple", symbol: { type: "simple-fill", outline: {color: [170, 160, 160, 0.90]}, color: [250, 240, 105, 0.75] }}, legendEnabled: 1, effect: "bloom(1.5, 0.5px, 0.1)", visible: 1});
-    bbbMap._config.layers.push({ layerId: 1, id: bbbMap.branchSearchID, title: "Branch Locations", objectIdField: "OBJECTID", outFields: ["*"], popupEnabled: 1, renderer: { type: "simple", symbol: { type: "simple-marker", size: 8, color: [56, 182, 255, 0.55], outline: { width: 0, color: "white" } } }, legendEnabled: 1, effect: "bloom(1.5, 0.5px, 0.1)", visible: 1 });
-    bbbMap._config.layers.push({ layerId: 2, id: bbbMap.nearbyBranchesID, title: "Nearby Branches", objectIdField: "OBJECTID", outFields: ["*"], popupEnabled: 1, renderer: { type: "simple", symbol: { type: "simple-marker", size: 8, color: [102, 204, 102, 0.55], outline: { width: 0, color: "white" } } }, legendEnabled: 1, effect: "bloom(1.5, 0.5px, 0.1)", visible: 1 });
-    bbbMap._config.layers.push({ layerId: 0, id: bbbMap.censusTractID, title: "Census Tracts", objectIdField: "OBJECTID", outFields: ["*"], popupEnabled: 1, legendEnabled: 1, visible: 1, renderer: { type: "simple", symbol: { type: "simple-fill", outline: { width: 0.5, color: [250, 255, 255, 0.5] }, color: [20, 130, 200, 0.35] } } });
+    bbbMap._config.layers.push({ layerId: 1, id: bbbMap.branchSearchID, title: "Branch Locations", objectIdField: "OBJECTID", outFields: ["*"], popupEnabled: 1, renderer: bbbMap.branchRenderer.dark, legendEnabled: 1, effect: "bloom(1.5, 0.5px, 0.1)", visible: 1 });
+    bbbMap._config.layers.push({ layerId: 2, id: bbbMap.nearbyBranchesID, title: "Nearby Branches", objectIdField: "OBJECTID", outFields: ["*"], popupEnabled: 1, renderer: bbbMap.nearbyBranchRenderer.dark, legendEnabled: 1, effect: "bloom(1.5, 0.5px, 0.1)", visible: 1 });
+    bbbMap._config.layers.push({ layerId: 0, id: bbbMap.censusTractID, title: "Census Tracts", objectIdField: "OBJECTID", outFields: ["*"], popupEnabled: 1, legendEnabled: 1, visible: 1, renderer: bbbMap.censusTractRenderer.dark });
 };
 
 bbbMap.init = () => {
@@ -119,6 +119,8 @@ bbbMap.initMap = () => {
                 "trigger-action",
                 (e) => {
                     console.log("reactiveUtils.on listening for popup", e, bbbMap.view.popup.selectedFeature);
+                    let feature = bbbMap.view.popup.selectedFeature;
+                    console.log("xxx Popup clicked", feature.geometry.spatialReference.wkid, bbbMap.view.spatialReference.wkid);
                     if (e.action.id === "find-nearby-branches") {
                         console.log("Popup Call: find-nearby-branches");
                         bbbMap.getNearbyBranches(bbbMap.view.popup.selectedFeature, bbbMap._bufferSize);
@@ -146,6 +148,13 @@ bbbMap.initMap = () => {
                 () => bbbMap.view.popup.selectedFeature,
                 (feature) => {
                     console.log("Popup feature change", feature);
+                    console.log("Checking spatial reference wkid: ", feature.geometry.spatialReference.wkid, bbbMap.view.spatialReference.wkid);
+
+                    if (feature.geometry.spatialReference.wkid !== bbbMap.view.spatialReference.wkid) {
+                        //feature.geometry = webMercatorUtils.project(feature.geometry, bbbMap.view.spatialReference.wkid);
+                        //geometryEngine
+                        console.log("whywhywhy");
+                    }
                     bbbMap.view.popup.actions = [];
 
                     //if (feature.geometry.type === 'point) {
@@ -189,7 +198,6 @@ bbbMap.ui.init = () => {
 
     //search
     bbbMap.ui.bankSearchModal = document.getElementById("bankSearchModal");
-    bbbMap.ui.bankSearchModalTitle = document.getElementById("bankSearchModalTitle");
     bbbMap.ui.bankNumberRecords = document.getElementById("bankNumberRecords");
 
     bbbMap.ui.initalSearchNotice = document.getElementById("initalSearchNotice");
@@ -301,6 +309,12 @@ bbbMap.ui.init = () => {
         bbbMap.ui.bankSearchCardContainer.innerHTML = "";
         paginatedBanks.forEach((bank) => bbbMap.ui.createBankSearchCard(bank));
     });
+
+    //Handle Print
+    document.getElementById("printBtn").addEventListener("calciteMenuItemSelect", (e) => {
+        console.log("printBtn click", e);
+        bbbMap.printReport();
+    });
 };
 
 bbbMap.ui.setMode = function (darkMode = true) {
@@ -375,7 +389,7 @@ bbbMap.ui.doBankSearch = (banks) => {
     bbbMap.ui.bankSearchCardContainer.innerHTML = "";
 
     bbbMap.ui.searchResultsNoticeContent.innerHTML = `${banks.length} banks found`;
-    bbbMap.ui.bankSearchModalTitle.innerHTML = `Select a bank (${banks.length} found)`;
+    bbbMap.ui.bankSearchModal.heading = `Select a bank (${banks.length} found)`;
     bbbMap.ui.searchResultsNotice.dataset.bankCnt = banks.length;
 
     bbbMap.ui.searchResultsNotice.kind = "success";
@@ -554,7 +568,9 @@ bbbMap.getLayerInfo = async (id, layer) => {
     const layerQuery = { objectIds: [id], returnGeometry: true };
     console.log("layerQuery", layerQuery);
 
-    const results = await layer.queryFeatures(layerQuery);
+    //const results = await layer.queryFeatures(layerQuery);
+    const results = await layer._bbbLayerView.queryFeatures(layerQuery);
+
     console.log("layerQuery results", results);
     return results;
 };
@@ -591,7 +607,7 @@ bbbMap.removeFeatureSearch = function () {
 bbbMap.addFeatureSearch = function (table) {
     console.log("addFeatureSearch", table);
 
-    let s = {
+    const search = {
         label: "Search Features",
         autoCloseMenu: true,
 
@@ -649,7 +665,70 @@ bbbMap.addFeatureSearch = function (table) {
         },
     };
 
-    table.menuConfig = { items: [s] };
+    const fullScreen = {
+        label: "Full Screen",
+        autoCloseMenu: true,
+        icon: "full-screen",
+        clickFunction: function (e) {
+            console.log("Full Screen Clicked", e);
+            bbbMap.featureTableFull = !bbbMap.featureTableFull;
+            if (bbbMap.featureTableFull) {
+                bbbMap.mapContainer.removeChild(bbbMap.mapDiv);
+            } else {
+                bbbMap.mapContainer.prepend(bbbMap.mapDiv);
+            }
+        },
+    };
+
+    const exportData = {
+        label: "Export Features",
+        autoCloseMenu: true,
+        icon: "download",
+        clickFunction: function (e) {
+            console.log("Export Features Clicked", e);
+            bbbMap.exportCSV(table);
+        },
+    };
+
+    table.menuConfig = { items: [search, exportData] };
+};
+
+bbbMap.exportCSV = async function (table) {
+    console.log("exportCSV", table);
+    let id = table.id;
+
+    try {
+        const layerView = table.layerView;
+        if (layerView) {
+            let results = await layerView.queryFeatures({ outFields: ["*"], geometry: bbbMap.view.extent, returnGeometry: false });
+            console.log("exportCSV results", results);
+            let data = results.features.map((x) => x.attributes);
+            let fields = results.fields;
+
+            const csvRows = [];
+            const headers = Object.keys(data[0]);
+            csvRows.push(headers.join(","));
+
+            for (const row of data) {
+                const values = headers.map((header) => {
+                    let val = row[header];
+                    return `"${val}"`;
+                });
+
+                csvRows.push(values.join(","));
+            }
+
+            let csvContent = csvRows.join("\n");
+            const blob = new Blob([csvContent]);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.setAttribute("href", url);
+            a.setAttribute("download", `map_data_${id}.csv`);
+            a.click();
+        }
+    } catch (e) {
+        console.log("Error Exporting CSV", e);
+    }
 };
 
 bbbMap.buildFeatureTable = (layer) => {
@@ -699,6 +778,12 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
 
         //bbbMap.startScrim(bbbMap.mainScrim, `Loading layer ${layer.id}`);
         const layerView = await featureLayer.load();
+        bbbMap.esri.reactiveUtils.when(
+            () => !layerView.updating,
+            () => {
+                console.log("xxx LayerView finished updating.");
+            }
+        );
 
         console.log(layer.id, "load complete", layerView);
         const result = await layerView.queryExtent();
@@ -707,6 +792,8 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
 
         bbbMap.map.add(featureLayer);
 
+        // bbbMap.view.whenLayerView(featureLayer).then(function (layerView) {
+        // The layerview for the layer
         if (includeTable) {
             bbbMap.buildFeatureTable(featureLayer);
         }
@@ -714,6 +801,7 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
         if (zoom) {
             bbbMap.view.goTo(result.extent, bbbMap.goToOptions);
         }
+        //});
     }
 };
 
@@ -934,7 +1022,7 @@ bbbMap.destroyFeatureTable = (id) => {
 bbbMap.ui.openPanel = (panel) => {
     console.log("openPanel", panel);
 
-    if (bbbMap.activePanel) {
+    if (bbbMap.activePanel !== panel) {
         bbbMap.ui.closePanel(bbbMap.activePanel);
     }
 
@@ -943,7 +1031,10 @@ bbbMap.ui.openPanel = (panel) => {
 
     console.log("button", b, "panel", p);
     if (b) b.active = true; // active the button
-    if (p) p.closed = false; //open the panel
+    if (p) {
+        p.closed = false; //open the panel
+        p.hidden = false; //open the panel
+    }
 
     bbbMap.activePanel = panel;
 
@@ -955,9 +1046,12 @@ bbbMap.ui.openPanel = (panel) => {
 
 bbbMap.ui.closePanel = (panel) => {
     console.log("closePanel", panel);
-    document.querySelector(`[data-action-id=${panel}]`).active = false;
-    document.querySelector(`[data-panel-id=${panel}]`).closed = true;
-    bbbMap.activePanel = "";
+    if (panel) {
+        document.querySelector(`[data-action-id=${panel}]`).active = false;
+        document.querySelector(`[data-panel-id=${panel}]`).closed = true;
+        document.querySelector(`[data-panel-id=${panel}]`).hidden = true;
+        bbbMap.activePanel = "";
+    }
 };
 
 bbbMap.bufferedSymbol = {
@@ -969,5 +1063,117 @@ bbbMap.bufferedSymbol = {
     },
 };
 
+bbbMap.branchRenderer = { dark: { type: "simple", symbol: { type: "simple-marker", size: 8, color: [56, 182, 255, 0.55], outline: { width: 0, color: "white" } } } };
+bbbMap.nearbyBranchRenderer = { dark: { type: "simple", symbol: { type: "simple-marker", size: 8, color: [102, 204, 102, 0.55], outline: { width: 0, color: "white" } } } };
+bbbMap.censusTractRenderer = { dark: { type: "simple", symbol: { type: "simple-fill", outline: { width: 0.5, color: [250, 255, 255, 0.5] }, color: [20, 130, 200, 0.35] } } };
+
 //bbbMap.branchFields = ['CERT','NAMEFULL','BRNUM','UNINUMBR','NAMEBR','ADDRESBR','DEPSUMBR','CBSABR','CBSANAMB','STCNTYBR','GEOCODE_CENSUS_TRACT','STATUS','SCORE','x','y','REPDTE'];
 bbbMap.branchFields = ["CERT", "NAME", "OFFNUM", "UNINUM", "OFFNUM", "ADDRESS", "CBSA", "CBSA_NO", "CBSA_METRO_NAME", "STNAME", "CITY", "COUNTY", "STCNTY", "SERVTYPE", "LATITUDE", "LONGITUDE", "RUNDATE"];
+
+//print functionality
+bbbMap.printReport = async function () {
+    console.log("printReport");
+    let screenshot = null,
+        canvas = null;
+
+    try {
+        screenshot = await bbbMap.view.takeScreenshot({ format: "png", ignorePadding: true });
+        console.log("Screenshot complete", screenshot);
+        bbbMap.generateReport(screenshot);
+    } catch (e) {
+        console.log("Error printing", e);
+    } finally {
+        console.log("Printing complete.  Any cleanup goes here.");
+    }
+};
+
+bbbMap.generateReport = async function (screenshot) {
+    let parent = null,
+        layer = null,
+        results = null;
+
+    parent = document.getElementById("featureTableContainer");
+    if (parent) {
+        dataTableDiv = parent.querySelector("div");
+        console.log("Layer id", dataTableDiv.id);
+        layer = bbbMap.map.findLayerById(dataTableDiv.id);
+    }
+
+    if (layer) {
+        results = await layer.queryFeatures({ outFields: ["*"], returnGeometry: false });
+    }
+
+    console.log("Print Layer Results", results);
+
+    let n = window.open();
+    let title = document.createElement("title");
+    title.textContent = "Map Report";
+    n.document.head.appendChild(title);
+
+    //add style
+    let style = document.createElement("link");
+    style.rel = "stylesheet";
+    style.type = "text/css";
+    style.href = "print.css";
+    n.document.head.appendChild(style);
+
+    //add Header
+    let sub = document.createElement("h2");
+    let subText = bbbMap.bankName ? bbbMap.bankName : "Map";
+    sub.textContent = subText;
+    n.document.body.appendChild(sub);
+
+    //add image
+    let img = document.createElement("img");
+    img.src = screenshot.dataUrl;
+    n.document.body.appendChild(img);
+
+    //add data
+    let dataTable = bbbMap.buildReportTableHTML(results, layer);
+    n.document.body.appendChild(dataTable);
+};
+
+bbbMap.buildReportTableHTML = function (results, layer) {
+    console.log("buildReportTableHTML", results, layer);
+    const table = document.createElement("table");
+    table.id = "dataTable";
+
+    let thead = document.createElement("thead");
+    let headerRow = document.createElement("tr");
+
+    let data = results.features.map((x) => x.attributes);
+
+    let fields = results.fields;
+
+    let headers = Object.keys(data[0]);
+
+    console.log("headers", headers);
+
+    headers.forEach((key) => {
+        let th = document.createElement("th");
+        th.textContent = key;
+        headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    //body
+    let tbody = document.createElement("tbody");
+
+    for (const r of data) {
+        const values = headers.map((header) => r[header]);
+        let row = document.createElement("tr");
+
+        values.forEach((obj) => {
+            let td = document.createElement("td");
+            td.textContent = obj;
+            row.appendChild(td);
+        });
+
+        tbody.appendChild(row);
+    }
+
+    table.appendChild(tbody);
+    return table;
+};
