@@ -183,7 +183,7 @@ bbbMap.ui.init = () => {
     bbbMap.tablesZoom = true;
     bbbMap.tablesShow = true;
 
-    bbbMap.appContainer = document.getElementById("mapContainer");
+    bbbMap.appContainer = document.getElementById("appContainer");
     bbbMap.featureTableContainer = document.getElementById("featureTableContainer");
     bbbMap.analyzeBranchContainer = document.getElementById("analyzeBranchContainer");
     bbbMap.analyzeBranchCardContent = document.getElementById("analyzeBranchCardContent");
@@ -315,6 +315,42 @@ bbbMap.ui.init = () => {
         console.log("printBtn click", e);
         bbbMap.printReport();
     });
+
+    //////////////////////////////
+    bbbMap.ui.divider = document.getElementById("divider");
+    bbbMap.ui.isResizing = false;
+
+    // Mouse down on the divider to start resizing
+    bbbMap.ui.divider.addEventListener("mousedown", (e) => {
+        console.log("mousedown", e);
+        bbbMap.ui.isResizing = true;
+        document.body.style.cursor = "row-resize";
+    });
+
+    // Mouse move to resize the panes
+    document.addEventListener("mousemove", (e) => {
+        if (bbbMap.ui.isResizing) {
+            console.log("mousemove", e.clientY, e.pageY, e.offsetY, e);
+            // Get the new width of the left pane (mapPane)
+
+            const containerHeight = bbbMap.appContainer.getBoundingClientRect().height;
+            const headerHeight = document.getElementById("bbbNavigation").offsetHeight;
+            const newHeight = ((e.clientY - headerHeight) / containerHeight) * 100;
+            console.log("newHeight", containerHeight, e.clientY, newHeight);
+
+            document.getElementById("map").style.flexBasis = `${newHeight}%`;
+            document.getElementById("featureTableContainer").style.flexBasis = `${100 - newHeight}%`;
+        }
+    });
+
+    // Mouse up to stop resizing
+    document.addEventListener("mouseup", (e) => {
+        console.log("mouseup", e);
+        bbbMap.ui.isResizing = false;
+        document.body.style.cursor = "default";
+    });
+
+    /////////////////////////////
 };
 
 bbbMap.ui.setMode = function (darkMode = true) {
@@ -673,9 +709,9 @@ bbbMap.addFeatureSearch = function (table) {
             console.log("Full Screen Clicked", e);
             bbbMap.featureTableFull = !bbbMap.featureTableFull;
             if (bbbMap.featureTableFull) {
-                bbbMap.mapContainer.removeChild(bbbMap.mapDiv);
+                bbbMap.appContainer.removeChild(bbbMap.mapDiv);
             } else {
-                bbbMap.mapContainer.prepend(bbbMap.mapDiv);
+                bbbMap.appContainer.prepend(bbbMap.mapDiv);
             }
         },
     };

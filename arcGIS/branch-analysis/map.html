@@ -29,22 +29,32 @@
                 width: 100%;
             }
 
-            #mapContainer {
+            #appContainer {
                 display: flex;
                 flex-direction: column;
                 height: 100%;
                 width: 100%;
             }
 
+            .pane {
+                flex: 1;
+                overflow: auto;
+            }
+
             #map {
-                flex: 2;
+                flex-basis: 70%;
                 width: 100%;
             }
 
             #featureTableContainer {
-                display: flex;
-                flex: 1;
+                flex-basis: 30%;
                 margin-left: 50px;
+            }
+
+            #divider {
+                height: 5px;
+                cursor: row-resize;
+                background-color: #888;
             }
 
             .searchCardContainer {
@@ -194,9 +204,10 @@
                     </calcite-panel>
                 </calcite-shell-panel>
                 <!---------------------------------Main--------------------------------->
-                <div id="mapContainer">
-                    <div id="map"></div>
-                    <div id="featureTableContainer"></div>
+                <div id="appContainer">
+                    <div class="pane" id="map"></div>
+                    <div id="divider"></div>
+                    <div class="pane" id="featureTableContainer"></div>
                 </div>
 
                 <!---------------------------------END Main-------------------------------

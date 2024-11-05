@@ -1,0 +1,40 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+}
+
+.pane {
+    flex: 1;
+    overflow: auto;
+    padding: 2px;
+}
+
+#mapPane {
+    background-color: #f0f8ff;
+}
+
+#tablePane {
+    background-color: #f5f5f5;
+}
+
+.divider {
+    height: 5px;
+    cursor: row-resize;
+    background-color: #888;
+}
+
+
