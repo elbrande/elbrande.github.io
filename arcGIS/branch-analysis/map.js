@@ -38,7 +38,8 @@ bbbMap.getLayerConfig = () => {
 
 bbbMap.init = () => {
     console.log("bbbMap.init");
-    bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
+    //bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
+    bbbMap.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurLDJ4FagdkG1IPMDWe1qQya8vLbNeSsil460syrIANSb5HVcgYmpAISwhHaMbLZYoALhJ7Iavx1DVVfMriZlSuEbESjnG5uMvzbi2P-4bOmiBIiyNXvUJAMDC1DPRshbf75SnExyLzI9TAFLtSNg2xDx_YokWzwAp3-8ri4PQxQ-nIVHkYC3-5sxeWNKmRqHIA..AT1_fF9P2II0";
     bbbMap.goToOptions = { animate: true, animationMode: "auto", duration: 1000, maxDuration: 2000, easing: "ease" };
     bbbMap.getDataSourceConfig();
     bbbMap.getLayerConfig();
