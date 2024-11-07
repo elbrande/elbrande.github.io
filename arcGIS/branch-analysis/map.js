@@ -47,7 +47,7 @@ bbbMap.init = () => {
 };
 
 bbbMap.initMap = () => {
-    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils) =>
+    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point) =>
         (async () => {
             esriConfig.apiKey = bbbMap.apiKey;
 
@@ -58,6 +58,7 @@ bbbMap.initMap = () => {
             bbbMap.esri.FeatureLayer = FeatureLayer;
             bbbMap.esri.FeatureTable = FeatureTable;
             bbbMap.esri.Graphic = Graphic;
+            bbbMap.esri.Point = Point;
 
             console.log("Building Map");
 
@@ -120,7 +121,7 @@ bbbMap.initMap = () => {
                 (e) => {
                     console.log("reactiveUtils.on listening for popup", e, bbbMap.view.popup.selectedFeature);
                     let feature = bbbMap.view.popup.selectedFeature;
-                    console.log("xxx Popup clicked", feature.geometry.spatialReference.wkid, bbbMap.view.spatialReference.wkid);
+                    //console.log("xxx Popup clicked", feature.geometry.spatialReference.wkid, bbbMap.view.spatialReference.wkid);
                     if (e.action.id === "find-nearby-branches") {
                         console.log("Popup Call: find-nearby-branches");
                         bbbMap.getNearbyBranches(bbbMap.view.popup.selectedFeature, bbbMap._bufferSize);
@@ -148,13 +149,13 @@ bbbMap.initMap = () => {
                 () => bbbMap.view.popup.selectedFeature,
                 (feature) => {
                     console.log("Popup feature change", feature);
-                    console.log("Checking spatial reference wkid: ", feature.geometry.spatialReference.wkid, bbbMap.view.spatialReference.wkid);
+                    console.log("Checking spatial reference wkid: Point:", feature.geometry.spatialReference.wkid, " view: ", bbbMap.view.spatialReference.wkid);
 
-                    if (feature.geometry.spatialReference.wkid !== bbbMap.view.spatialReference.wkid) {
-                        //feature.geometry = webMercatorUtils.project(feature.geometry, bbbMap.view.spatialReference.wkid);
-                        //geometryEngine
-                        console.log("whywhywhy");
-                    }
+                    // if (feature.geometry.spatialReference.wkid !== bbbMap.view.spatialReference.wkid) {
+                    //feature.geometry = webMercatorUtils.project(feature.geometry, bbbMap.view.spatialReference.wkid);
+                    //geometryEngine
+                    console.log("whywhywhy");
+                    //}
                     bbbMap.view.popup.actions = [];
 
                     //if (feature.geometry.type === 'point) {
@@ -640,8 +641,8 @@ bbbMap.removeFeatureSearch = function () {
     }
 };
 
-bbbMap.addFeatureSearch = function (table) {
-    console.log("addFeatureSearch", table);
+bbbMap.addTableMenu = function (table) {
+    console.log("addTableMenu", table);
 
     const search = {
         label: "Search Features",
@@ -657,6 +658,7 @@ bbbMap.addFeatureSearch = function (table) {
             searchContainer.innerHTML = "Press Enter to Search";
             searchContainer.id = "featureSearchContainer";
             searchBox = document.createElement("calcite-input-text");
+            searchBox.setFocus();
             let go = document.createElement("calcite-button");
             go.innerHTML = "Go";
             go.slot = "action";
@@ -693,7 +695,16 @@ bbbMap.addFeatureSearch = function (table) {
                 let response = await table.layer.queryExtent();
                 console.log("Response", response);
                 if (response.count > 0) {
-                    bbbMap.view.goTo(response.extent, bbbMap.goToOptions);
+                    if (response.count > 1) {
+                        bbbMap.view.goTo(response.extent, bbbMap.goToOptions);
+                    } else {
+                        //let opt = Object.assign({}, bbbMap.goToOptions, { center: [response.extent.center.longitude, response.extent.center.latitude], zoom: 12 });
+                        let opt = { animate: false, center: [response.extent.center.longitude, response.extent.center.latitude], zoom: 12 };
+                        console.log("Only one result, so not a valid extent, use the center of the extent and zoom in close", opt);
+                        bbbMap.view.goTo(opt);
+                    }
+
+                    //bbbMap.view.goTo(response.extent, opt);
                 }
             });
 
@@ -777,7 +788,8 @@ bbbMap.buildFeatureTable = (layer) => {
         id: layer.id,
         view: bbbMap.view,
         highlightEnabled: true,
-        visibleElements: { columnMenus: false },
+        menu: true,
+        visibleElements: { columnMenus: false, menuItems: { exportSelectionToCSV: false, clearSelection: false, deleteSelection: false, refreshData: false, zoomToSelection: false, selectedRecordsShowAllToggle: false, selectedRecordsShowSelectedToggle: false } },
         layer: layer,
         hiddenFields: ["OBJECTID"],
         container: c,
@@ -787,7 +799,7 @@ bbbMap.buildFeatureTable = (layer) => {
         console.log(layer.id, "feature table complete");
         bbbMap.featureTables.push(table);
         bbbMap.showFeatureTable(layer.id);
-        bbbMap.addFeatureSearch(table);
+        bbbMap.addTableMenu(table);
     });
 
     featureTable.highlightIds.on("change", async (event) => {
@@ -817,7 +829,7 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
         bbbMap.esri.reactiveUtils.when(
             () => !layerView.updating,
             () => {
-                console.log("xxx LayerView finished updating.");
+                console.log("LayerView finished updating.");
             }
         );
 
@@ -841,14 +853,22 @@ bbbMap.buildFeatureLayer = async (layer, includeTable = true, zoom = true) => {
     }
 };
 
+bbbMap.getShapeFromFeature = (feature) => {
+    let shape;
+    if (feature.geometry.type === "point") {
+        shape = new bbbMap.esri.Point({ longitude: feature.attributes.LONGITUDE, latitude: feature.attributes.LATITUDE, type: "point" });
+    } else {
+        shape = feature.geometry;
+    }
+
+    return shape;
+};
+
 bbbMap.getNearbyBranches = async (feature, d = 1.2) => {
-    console.log("getNearbyBranches", d, feature);
+    console.log("getNearbyBranches", d, feature.geometry.spatialReference.wkid, feature);
 
     if (feature) {
         bbbMap.selectedBranchFeature = feature;
-    }
-
-    if (bbbMap.selectedBranchFeature) {
         let g = bbbMap.bufferGraphicsLayer;
 
         //bbbMap.view.closePopup();
@@ -858,9 +878,13 @@ bbbMap.getNearbyBranches = async (feature, d = 1.2) => {
 
         bbbMap.ui.openPanel(bbbMap.nearbyBranchesID);
 
-        console.log("Getting buffered shape", bbbMap.selectedBranchFeature);
+        console.log("Getting buffered shape", feature);
+        console.log("xxx Something is wrong.  Feature lat/lng doesn't match the attributes the first time only.", feature.geometry.longitude, feature.attributes.LONGITUDE, feature.geometry.latitude, feature.attributes.LATITUDE);
 
-        const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedBranchFeature.geometry, d, "miles");
+        let shape = bbbMap.getShapeFromFeature(feature);
+
+        //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(feature.geometry, d, "miles");
+        const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
         const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
         g.removeAll();
         g.add(graphic);
@@ -911,8 +935,10 @@ bbbMap.getNearbyTracts = async (feature, d = 1.2) => {
         bbbMap.censusScrim.loading = true;
         bbbMap.ui.openPanel(bbbMap.censusTractID);
 
+        let shape = bbbMap.getShapeFromFeature(feature);
         //Create buffers around the buffers and return the union since more than one branch can be selected
-        const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedTractFeature.geometry, d, "miles");
+        //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedTractFeature.geometry, d, "miles");
+        const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
         const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
 
         g.removeAll();
