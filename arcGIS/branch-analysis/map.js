@@ -14,7 +14,7 @@ bbbMap.sanitizeInputs = (i) => {
 bbbMap.getDataSourceConfig = () => {
     bbbMap._config.data = {};
     bbbMap.bankService = "https://banks.data.fdic.gov/api/institutions?fields=ZIP,ADDRESS,%2COFFDOM%2CCITY%2CCOUNTY%2CSTNAME%2CSTALP%2CNAME%2CACTIVE%2CCERT%2CCBSA%2CASSET%2CNETINC%2CDEP%2CDEPDOM%2CROE%2CROA%2CDATEUPDT%2COFFICES&sort_by=NAME&sort_order=DESC&limit=100&offset=0&format=json&download=false&filename=data_file";
-    bbbMap.branchService = "https://banks.data.fdic.gov/api/locations?fields=CERT,ADDRESS,LATITUDE,LONGITUDE,NAME,OFFNAME%2CUNINUM%2CSERVTYPE%2CRUNDATE%2CCITY%2CSTNAME%2CZIP%2CCOUNTY&sort_by=NAME&sort_order=DESC&limit=5000&offset=0&format=json&download=false&filename=data_file";
+    // bbbMap.branchService = "https://banks.data.fdic.gov/api/locations?fields=CERT,ADDRESS,LATITUDE,LONGITUDE,NAME,OFFNAME%2CUNINUM%2CSERVTYPE%2CRUNDATE%2CCITY%2CSTNAME%2CZIP%2CCOUNTY&sort_by=NAME&sort_order=DESC&limit=5000&offset=0&format=json&download=false&filename=data_file";
     bbbMap.censusTractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Total_Population_Boundaries/FeatureServer/2";
     bbbMap.nearbyBranchService = "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/FDIC_InsuredBanks/FeatureServer/0";
     bbbMap.branchService = "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/arcgis/rest/services/FDIC_InsuredBanks/FeatureServer/0";
@@ -695,17 +695,16 @@ bbbMap.addTableMenu = function (table) {
 
                 let response = await table.layer.queryExtent();
                 console.log("Response", response);
-                if (response.count > 0) {
-                    if (response.count > 1) {
-                        bbbMap.view.goTo(response.extent, bbbMap.goToOptions);
-                    } else {
-                        //let opt = Object.assign({}, bbbMap.goToOptions, { center: [response.extent.center.longitude, response.extent.center.latitude], zoom: 12 });
-                        let opt = { animate: false, center: [response.extent.center.longitude, response.extent.center.latitude], zoom: 12 };
-                        console.log("Only one result, so not a valid extent, use the center of the extent and zoom in close", opt);
-                        bbbMap.view.goTo(opt);
-                    }
 
-                    //bbbMap.view.goTo(response.extent, opt);
+                if (response.count > 1) {
+                    bbbMap.view.goTo(response.extent, bbbMap.goToOptions);
+                } else if (response.count === 1) {
+                    //let opt = Object.assign({}, bbbMap.goToOptions, { center: [response.extent.center.longitude, response.extent.center.latitude], zoom: 12 });
+                    let opt = { center: [response.extent.center.longitude, response.extent.center.latitude], zoom: 12 };
+                    console.log("Only one result, so not a valid extent, use the center of the extent and zoom in close", opt);
+                    bbbMap.view.goTo(opt, bbbMap.goToOptions);
+                } else {
+                    bbbMap.showWarning(`could not find a feature/row containing ${searchString}`, "No Features Found");
                 }
             });
 
@@ -776,6 +775,7 @@ bbbMap.exportCSV = async function (table) {
         }
     } catch (e) {
         console.log("Error Exporting CSV", e);
+        bbbMap.errorHandler(e, "Error Exporting CSV");
     }
 };
 
@@ -866,45 +866,54 @@ bbbMap.getShapeFromFeature = (feature) => {
 };
 
 bbbMap.getNearbyBranches = async (feature, d = 1.2) => {
-    console.log("getNearbyBranches", d, feature.geometry.spatialReference.wkid, feature);
+    console.log("getNearbyBranches", d, feature);
+    try {
+        if (feature) {
+            bbbMap.selectedBranchFeature = feature;
+        }
 
-    if (feature) {
-        bbbMap.selectedBranchFeature = feature;
-        let g = bbbMap.bufferGraphicsLayer;
+        if (bbbMap.selectedBranchFeature) {
+            let g = bbbMap.bufferGraphicsLayer;
 
-        //bbbMap.view.closePopup();
+            //bbbMap.view.closePopup();
 
-        bbbMap.nearbyBranchesScrim.hidden = false;
-        bbbMap.nearbyBranchesScrim.loading = true;
+            bbbMap.nearbyBranchesScrim.hidden = false;
+            bbbMap.nearbyBranchesScrim.loading = true;
 
-        bbbMap.ui.openPanel(bbbMap.nearbyBranchesID);
+            bbbMap.ui.openPanel(bbbMap.nearbyBranchesID);
 
-        console.log("Getting buffered shape", feature);
-        console.log("xxx Something is wrong.  Feature lat/lng doesn't match the attributes the first time only.", feature.geometry.longitude, feature.attributes.LONGITUDE, feature.geometry.latitude, feature.attributes.LATITUDE);
+            console.log("Getting buffered shape", feature);
+            let lngDiff = Math.abs(bbbMap.selectedBranchFeature.geometry.longitude) - Math.abs(bbbMap.selectedBranchFeature.attributes.LONGITUDE);
+            let latDiff = Math.abs(bbbMap.selectedBranchFeature.geometry.latitude) - Math.abs(bbbMap.selectedBranchFeature.attributes.LATITUDE);
+            console.log("xxx", lngDiff, latDiff);
+            //console.log("xxx Something is wrongxxx.  Feature lat/lng doesn't match the attributes the first time only.", `Lng: ${lngDiff} Lat: ${latDiff}`, feature.geometry.longitude, feature.attributes.LONGITUDE, feature.geometry.latitude, feature.attributes.LATITUDE);
 
-        let shape = bbbMap.getShapeFromFeature(feature);
+            let shape = bbbMap.getShapeFromFeature(bbbMap.selectedBranchFeature);
 
-        //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(feature.geometry, d, "miles");
-        const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
-        const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
-        g.removeAll();
-        g.add(graphic);
+            //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(feature.geometry, d, "miles");
+            const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
+            const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
+            g.removeAll();
+            g.add(graphic);
 
-        bbbMap.view.goTo(geom, bbbMap.goToOptions);
+            bbbMap.view.goTo(geom, bbbMap.goToOptions);
 
-        let nearbyBranchQuery = {
-            geometry: geom,
-            spatialRelationship: "intersects",
-            outFields: bbbMap.branchFields,
-            returnGeometry: true,
-        };
-        //where: "BKMO=0",
-        console.log("nearbyBranch Query", nearbyBranchQuery);
+            let nearbyBranchQuery = {
+                geometry: geom,
+                spatialRelationship: "intersects",
+                outFields: bbbMap.branchFields,
+                returnGeometry: true,
+            };
+            //where: "BKMO=0",
+            console.log("nearbyBranch Query", nearbyBranchQuery);
 
-        const results = await bbbMap.branchReferenceLayer.queryFeatures(nearbyBranchQuery);
-        bbbMap.showNearbyBranches(results);
-    } else {
-        console.log("No feature selected");
+            const results = await bbbMap.branchReferenceLayer.queryFeatures(nearbyBranchQuery);
+            bbbMap.showNearbyBranches(results);
+        } else {
+            console.log("No Branch Selected");
+        }
+    } catch (e) {
+        bbbMap.errorHandler(e, "Error Getting Nearby Branches");
     }
 };
 
@@ -925,43 +934,47 @@ bbbMap.showNearbyBranches = (results) => {
 
 bbbMap.getNearbyTracts = async (feature, d = 1.2) => {
     console.log("getNearbyTract", feature, d);
-    if (feature) {
-        bbbMap.selectedTractFeature = feature;
-    }
+    try {
+        if (feature) {
+            bbbMap.selectedTractFeature = feature;
+        }
 
-    if (bbbMap.selectedTractFeature) {
-        let g = bbbMap.bufferGraphicsLayer;
+        if (bbbMap.selectedTractFeature) {
+            let g = bbbMap.bufferGraphicsLayer;
 
-        bbbMap.censusScrim.hidden = false;
-        bbbMap.censusScrim.loading = true;
-        bbbMap.ui.openPanel(bbbMap.censusTractID);
+            bbbMap.censusScrim.hidden = false;
+            bbbMap.censusScrim.loading = true;
+            bbbMap.ui.openPanel(bbbMap.censusTractID);
 
-        let shape = bbbMap.getShapeFromFeature(feature);
-        //Create buffers around the buffers and return the union since more than one branch can be selected
-        //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedTractFeature.geometry, d, "miles");
-        const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
-        const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
+            let shape = bbbMap.getShapeFromFeature(feature);
+            //Create buffers around the buffers and return the union since more than one branch can be selected
+            //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedTractFeature.geometry, d, "miles");
+            const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
+            const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
 
-        g.removeAll();
-        g.add(graphic);
-        //g.add(new bbbMap.esri.Graphic(geom, bbbMap.bufferedSymbol));
+            g.removeAll();
+            g.add(graphic);
+            //g.add(new bbbMap.esri.Graphic(geom, bbbMap.bufferedSymbol));
 
-        //zoom to buffer
-        //bbbMap.view.goTo(geom);
+            //zoom to buffer
+            //bbbMap.view.goTo(geom);
 
-        let censusTractQuery = {
-            geometry: geom,
-            spatialRelationship: "intersects",
-            //spatialRelationship: "contains",
-            outFields: ["OBJECTID ", "NAME", "State", "County", "ALAND", "B01001_001E", "B01001_001M", "B01001_002E", "B01001_003E", "B01001_calc_pctDependE", "B01001_calc_sexRatioE", "B01001_calc_numLT18E", "B01001_calc_pctDependE"],
-            returnGeometry: true,
-            returnCentroid: true,
-        };
+            let censusTractQuery = {
+                geometry: geom,
+                spatialRelationship: "intersects",
+                //spatialRelationship: "contains",
+                outFields: ["OBJECTID ", "NAME", "State", "County", "ALAND", "B01001_001E", "B01001_001M", "B01001_002E", "B01001_003E", "B01001_calc_pctDependE", "B01001_calc_sexRatioE", "B01001_calc_numLT18E", "B01001_calc_pctDependE"],
+                returnGeometry: true,
+                returnCentroid: true,
+            };
 
-        const tracts = await bbbMap.censusTractReferenceLayer.queryFeatures(censusTractQuery);
-        bbbMap.showCensusTracts(tracts);
-    } else {
-        console.log("No tract selected");
+            const tracts = await bbbMap.censusTractReferenceLayer.queryFeatures(censusTractQuery);
+            bbbMap.showCensusTracts(tracts);
+        } else {
+            console.log("No tract selected");
+        }
+    } catch (e) {
+        bbbMap.errorHandler(e, "Error Getting Tracts");
     }
 };
 
@@ -1052,12 +1065,31 @@ bbbMap.showFeatureContainer = (on = true) => {
         //}
     } catch (e) {
         console.log("Error showing feature tables", e);
+        bbbMap.errorHandler(e, "Error showing feature tables");
     }
 };
 
-bbbMap.errorHandler = (e) => {
-    console.log("errorHandler", e);
-    document.getElementById("errorAlertTitle").innerHTML = `Error: ${e.details.messages[0]}`;
+bbbMap.showWarning = (msg, title = "Warning") => {
+    console.log("showWarning", title, msg);
+    document.getElementById("warningTitle").innerHTML = title;
+    document.getElementById("warningMsg").innerHTML = msg;
+    document.getElementById("warningAlert").open = true;
+    document.getElementById("warningAlert").autoClose = true;
+};
+
+bbbMap.errorHandler = (e, title) => {
+    console.log("errorHandler", e, title);
+
+    let titleTxt = title ? title : `Error: ${e.name}`;
+    document.getElementById("errorTitle").innerHTML = titleTxt;
+
+    if (e.stack) {
+        let stackMsg = e.stack.split("\n", 2).join("");
+        document.getElementById("errorMsg").innerHTML = stackMsg;
+    } else {
+        document.getElementById("errorMsg").innerHTML = e.message;
+    }
+
     document.getElementById("errorAlert").open = true;
 };
 
@@ -1145,6 +1177,7 @@ bbbMap.printReport = async function () {
         bbbMap.generateReport(screenshot);
     } catch (e) {
         console.log("Error printing", e);
+        bbbMap.errorHandler(e, "Error Printing");
     } finally {
         console.log("Printing complete.  Any cleanup goes here.");
     }
