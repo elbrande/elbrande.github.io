@@ -18,7 +18,7 @@
         <link id="theme-dark" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" />
         <link id="theme-light" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" disabled />
 
-        <script src="map.js?v1.4"></script>
+        <script src="map.js?v1.41"></script>
 
         <style>
             html,
@@ -237,8 +237,14 @@
                     </div>
                 </calcite-dialog>
 
-                <calcite-alert kind="danger" icon label="alert" id="errorAlert">
-                    <div id="errorAlertTitle" slot="title"></div>
+                <calcite-alert kind="warning" label="warning" id="warningAlert" auto-close icon>
+                    <div id="warningTitle" slot="title">Warning</div>
+                    <div id="warningMsg" slot="message"></div>
+                </calcite-alert>
+
+                <calcite-alert kind="danger" label="alert" id="errorAlert" icon>
+                    <div id="errorTitle" slot="title">Error</div>
+                    <div id="errorMsg" slot="message"></div>
                 </calcite-alert>
             </calcite-shell>
         </div>
