@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+        <title>3B Geocoder</title>
+        <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+
+        <script src="https://js.arcgis.com/4.31/"></script>
+
+        <link id="theme-dark" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" />
+        <link id="theme-light" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" disabled />
+
+        <script src="geocoder.js?v1.42"></script>
+
+        <style>
+            html,
+            body,
+            #map {
+                padding: 0;
+                margin: 0;
+                height: 100%;
+                width: 100%;
+            }
+
+            #parameters {
+                display: flex;
+                height: auto;
+                gap: 2rem;
+            }
+
+            #address {
+                width: 500px;
+            }
+        </style>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                console.log("DOM loaded");
+                bbbMap.init();
+            });
+        </script>
+    </head>
+    <body class="calcite-mode-dark">
+        <header></header>
+
+        <calcite-loader label="loading map" text="Loading Maps"></calcite-loader>
+
+        <calcite-shell content-behind>
+            <calcite-navigation slot="header" id="bbbNavigation">
+                <calcite-navigation-logo slot="logo" id="logo" heading="3B"></calcite-navigation-logo>
+
+                <calcite-menu id="navigationMenu" slot="content-start">
+                    <calcite-menu-item text="Geocoder" id="appName" label="app" icon-start="map"></calcite-menu-item>
+                </calcite-menu>
+            </calcite-navigation>
+
+            <calcite-shell-panel id="leftShellPanel" slot="panel-start" position="start" display-mode="float">
+                <!-- map-specific panels (each one provides a div for ArcGIS JavaScript API widgets) 
+                <calcite-panel data-panel-id="tabPanel" id="tabPanel" heading="Tabs" open>
+                    <calcite-tabs>
+                        <calcite-tab-nav slot="title-group">
+                            <calcite-tab-title selected> Watercraft </calcite-tab-title>
+                            <calcite-tab-title>Automobiles</calcite-tab-title>
+                            <calcite-tab-title>Aircrafts</calcite-tab-title>
+                        </calcite-tab-nav>
+                        <calcite-tab selected>
+                            <calcite-notice icon="embark" open>
+                                <div slot="message">Recommended for coastal use</div>
+                            </calcite-notice>
+                        </calcite-tab>
+                        <calcite-tab>
+                            <calcite-notice icon="car" open>
+                                <div slot="message">A good choice for inland adventure</div>
+                            </calcite-notice>
+                        </calcite-tab>
+                        <calcite-tab>
+                            <calcite-notice icon="plane" open>
+                                <div slot="message">Cross continents quickly</div>
+                            </calcite-notice>
+                        </calcite-tab>
+                    </calcite-tabs>
+                </calcite-panel>
+                -->
+                <calcite-panel data-panel-id="mainPanel" id="mainPanel" heading="Results" closed>
+                    <div id="mainPanelContent"></div>
+                </calcite-panel>
+            </calcite-shell-panel>
+            <!---------------------------------Main--------------------------------->
+            <div id="parameters" style="display: none">
+                <calcite-label layout="inline"
+                    >Address
+                    <calcite-input-text id="address" placeholder="Enter Address" value="3501 Fairfax Drive, Arlington, VA 22226" clearable autofocus>
+                        <calcite-button id="getGeocodeBtn" slot="action">Go</calcite-button>
+                    </calcite-input-text>
+                </calcite-label>
+            </div>
+            <div id="map"></div>
+        </calcite-shell>
+    </body>
+</html>

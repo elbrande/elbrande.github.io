@@ -289,7 +289,8 @@ bbbMap.ui.init = () => {
         console.log("calciteActionBarToggle", e);
         bbbMap.ui.actionBarExpanded = !bbbMap.ui.actionBarExpanded;
         bbbMap.view.padding = { left: bbbMap.ui.actionBarExpanded ? 155 : 45 };
-        document.getElementById("featureTableContainer").style.marginLeft = bbbMap.ui.actionBarExpanded ? "170px" : "50px";
+        //document.getElementById("featureTableContainer").style.marginLeft = bbbMap.ui.actionBarExpanded ? "170px" : "50px";
+        bbbMap.featureTableContainer.style.marginLeft = bbbMap.ui.actionBarExpanded ? "170px" : "50px";
     });
 
     //reopen search result modal
@@ -327,11 +328,14 @@ bbbMap.ui.init = () => {
         console.log("mousedown", e);
         bbbMap.ui.isResizing = true;
         document.body.style.cursor = "row-resize";
+        bbbMap.tablesZoom = false;
+        console.log("Starting Resize");
     });
 
     // Mouse move to resize the panes
     document.addEventListener("mousemove", (e) => {
-        if (bbbMap.ui.isResizing) {
+        if (bbbMap.featureTableContainer && bbbMap.ui.isResizing) {
+            //document.getElementById("featureLayerZoomToggle").checked = false;
             console.log("mousemove", e.clientY, e.pageY, e.offsetY, e);
             // Get the new width of the left pane (mapPane)
 
@@ -341,15 +345,22 @@ bbbMap.ui.init = () => {
             console.log("newHeight", containerHeight, e.clientY, newHeight);
 
             document.getElementById("map").style.flexBasis = `${newHeight}%`;
-            document.getElementById("featureTableContainer").style.flexBasis = `${100 - newHeight}%`;
+            bbbMap.featureTableContainer.style.flexBasis = `${100 - newHeight}%`;
         }
     });
 
     // Mouse up to stop resizing
     document.addEventListener("mouseup", (e) => {
-        console.log("mouseup", e);
-        bbbMap.ui.isResizing = false;
-        document.body.style.cursor = "default";
+        if (bbbMap.ui.isResizing) {
+            console.log("Resizing Complete", e);
+            bbbMap.ui.isResizing = false;
+            document.body.style.cursor = "default";
+            setTimeout(() => {
+                bbbMap.tablesZoom = document.getElementById("featureLayerZoomToggle").checked;
+                console.log("Resetting bbbMap.tablesZoom", bbbMap.tablesZoom);
+            }, 500);
+        }
+        //bbbMap.tablesZoom = document.getElementById("featureLayerZoomToggle").checked;
     });
 
     /////////////////////////////
@@ -869,10 +880,10 @@ bbbMap.getNearbyBranches = async (feature, d = 1.2) => {
     console.log("getNearbyBranches", d, feature);
     try {
         if (feature) {
-            bbbMap.selectedBranchFeature = feature;
+            bbbMap.selectedFeature = feature;
         }
 
-        if (bbbMap.selectedBranchFeature) {
+        if (bbbMap.selectedFeature) {
             let g = bbbMap.bufferGraphicsLayer;
 
             //bbbMap.view.closePopup();
@@ -883,12 +894,12 @@ bbbMap.getNearbyBranches = async (feature, d = 1.2) => {
             bbbMap.ui.openPanel(bbbMap.nearbyBranchesID);
 
             console.log("Getting buffered shape", feature);
-            let lngDiff = Math.abs(bbbMap.selectedBranchFeature.geometry.longitude) - Math.abs(bbbMap.selectedBranchFeature.attributes.LONGITUDE);
-            let latDiff = Math.abs(bbbMap.selectedBranchFeature.geometry.latitude) - Math.abs(bbbMap.selectedBranchFeature.attributes.LATITUDE);
+            let lngDiff = Math.abs(bbbMap.selectedFeature.geometry.longitude) - Math.abs(bbbMap.selectedFeature.attributes.LONGITUDE);
+            let latDiff = Math.abs(bbbMap.selectedFeature.geometry.latitude) - Math.abs(bbbMap.selectedFeature.attributes.LATITUDE);
             console.log("xxx", lngDiff, latDiff);
             //console.log("xxx Something is wrongxxx.  Feature lat/lng doesn't match the attributes the first time only.", `Lng: ${lngDiff} Lat: ${latDiff}`, feature.geometry.longitude, feature.attributes.LONGITUDE, feature.geometry.latitude, feature.attributes.LATITUDE);
 
-            let shape = bbbMap.getShapeFromFeature(bbbMap.selectedBranchFeature);
+            let shape = bbbMap.getShapeFromFeature(bbbMap.selectedFeature);
 
             //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(feature.geometry, d, "miles");
             const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
@@ -936,19 +947,19 @@ bbbMap.getNearbyTracts = async (feature, d = 1.2) => {
     console.log("getNearbyTract", feature, d);
     try {
         if (feature) {
-            bbbMap.selectedTractFeature = feature;
+            bbbMap.selectedFeature = feature;
         }
 
-        if (bbbMap.selectedTractFeature) {
+        if (bbbMap.selectedFeature) {
             let g = bbbMap.bufferGraphicsLayer;
 
             bbbMap.censusScrim.hidden = false;
             bbbMap.censusScrim.loading = true;
             bbbMap.ui.openPanel(bbbMap.censusTractID);
 
-            let shape = bbbMap.getShapeFromFeature(feature);
+            let shape = bbbMap.getShapeFromFeature(bbbMap.selectedFeature);
             //Create buffers around the buffers and return the union since more than one branch can be selected
-            //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedTractFeature.geometry, d, "miles");
+            //const geom = bbbMap.esri.geometryEngine.geodesicBuffer(bbbMap.selectedFeature.geometry, d, "miles");
             const geom = bbbMap.esri.geometryEngine.geodesicBuffer(shape, d, "miles");
             const graphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
 
