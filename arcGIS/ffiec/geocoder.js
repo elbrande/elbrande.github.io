@@ -3,12 +3,13 @@ const bbbMap = {};
 bbbMap.init = () => {
     console.log("bbbMap.init");
     bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
+    bbbMap.censusTractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Median_Income_by_Race_and_Age_Selp_Emp_Boundaries/FeatureServer/2";
     bbbMap.goToOptions = { animate: true, animationMode: "auto", duration: 1000, maxDuration: 2000, easing: "ease" };
     bbbMap.initMap();
 };
 
 bbbMap.initMap = () => {
-    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point) =>
+    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator) =>
         (async () => {
             esriConfig.apiKey = bbbMap.apiKey;
 
@@ -20,6 +21,8 @@ bbbMap.initMap = () => {
             bbbMap.esri.FeatureTable = FeatureTable;
             bbbMap.esri.Graphic = Graphic;
             bbbMap.esri.Point = Point;
+            bbbMap.esri.Sketch = Sketch;
+            bbbMap.esri.colorRendererCreator = colorRendererCreator;
 
             console.log("Building Map");
 
@@ -38,7 +41,7 @@ bbbMap.initMap = () => {
                 popup: {
                     viewModel: { includeDefaultActions: 0 },
                     defaultPopupTemplateEnabled: 1,
-                    action: [
+                    actions: [
                         { title: "Nearby Tracts", id: "find-nearby-tracts", icon: "polygon" },
                         { title: "Refresh Census Demographics", id: "refresh-tract-info", icon: "information" },
                     ],
@@ -51,8 +54,8 @@ bbbMap.initMap = () => {
                 container: "map",
             });
 
-            bbbMap.legendWidget = document.createElement("div");
-            bbbMap.legendWidget = new Legend({ view: bbbMap.view, container: bbbMap.legendWidget });
+            bbbMap.legendContainer = document.createElement("div");
+            bbbMap.legendWidget = new Legend({ view: bbbMap.view, container: bbbMap.legendContainer });
 
             console.log("adding shape service");
             bbbMap.censusTractShapeService = new FeatureLayer({ id: "censusTractService", url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Median_Income_by_Race_and_Age_Selp_Emp_Boundaries/FeatureServer/2" });
@@ -60,6 +63,8 @@ bbbMap.initMap = () => {
             console.log("graphics layer");
             bbbMap.graphicsLayer = new GraphicsLayer({ id: "graphicsLayer", popupEnabled: 1, title: "Graphics" });
             bbbMap.map.add(bbbMap.graphicsLayer);
+
+            bbbMap.censusTractShapeLayer = new FeatureLayer({ id: "censusTractService", url: bbbMap.censusTractService });
 
             bbbMap.view.on("immediate-click", (e) => {
                 console.log("Map click", e);
@@ -87,16 +92,17 @@ bbbMap.initMap = () => {
                 () => bbbMap.view.popup,
                 "trigger-action",
                 (e) => {
-                    console.log("reactiveUtils.on listening for popup", e, bbbMap.view.popup.selectedFeature);
+                    console.log("reactiveUtils.on listening for popup", e.action.id, e, bbbMap.view.popup.selectedFeature);
                     let feature = bbbMap.view.popup.selectedFeature;
-                    //console.log("xxx Popup clicked", feature.geometry.spatialReference.wkid, bbbMap.view.spatialReference.wkid);
+
                     if (e.action.id === "find-nearby-tracts") {
                         console.log("Popup Call: find-nearby-branches");
+                        bbbMap.getNearbyTracts(feature);
                         //bbbMap.getNearbyBranches(bbbMap.view.popup.selectedFeature, bbbMap._bufferSize);
                     }
-
                     if (e.action.id === "refresh-tract-info") {
-                        console.log("Popup Call: find-nearby-tracts");
+                        console.log("Popup Call: refresh-tract-info");
+                        bbbMap.refreshTractInfo(feature);
                     }
                 }
             );
@@ -121,6 +127,39 @@ bbbMap.initMap = () => {
             bbbMap.view.when((view) => {
                 console.log("Map.view created", view);
                 bbbMap.ui();
+
+                bbbMap.sketchLayer = new GraphicsLayer();
+                bbbMap.map.add(bbbMap.sketchLayer);
+
+                bbbMap.sketch = new Sketch({
+                    layer: bbbMap.sketchLayer,
+                    view: bbbMap.view,
+                    creationMode: "update",
+                    availableCreateTools: ["polygon", "rectangle", "circle"],
+                    defaultCreateOptions: { mode: "hybrid" },
+                    defaultUpdateOptions: { mode: "move" },
+                    visibleElements: { settingsMenu: false, selectionTools: { "rectangle-selection": false, "lasso-selection": false } },
+                });
+
+                bbbMap.sketch.on("create", (e) => {
+                    if (e.state === "start") {
+                        bbbMap.sketchLayer.removeAll();
+                    }
+
+                    if (e.state === "complete") {
+                        console.log("sketch finished", e);
+                        bbbMap.finishSketch(e.graphic, e.tool);
+                    }
+                });
+
+                bbbMap.sketch.on("update", (e) => {
+                    if (e.toolEventInfo && e.toolEventInfo.type && ["rotate-stop", "move-stop", "reshape-stop", "scale-stop"].indexOf(e.toolEventInfo.type) > -1) {
+                        console.log("sketch updated", e);
+                        bbbMap.finishSketch(e.graphics[0], e.tool);
+                    }
+                });
+
+                bbbMap.view.ui.add(bbbMap.sketch, "top-right");
             });
 
             bbbMap.view.on("layerview-destroy", (event) => {
@@ -129,6 +168,115 @@ bbbMap.initMap = () => {
         })()); //end require
 };
 
+bbbMap.showAlert = function (type, title, msg) {
+    console.log("showAlert", type, title, msg);
+    const alert = document.getElementById(`${type}Alert`);
+    const t = document.getElementById(`${type}Title`);
+    const m = document.getElementById(`${type}Msg`);
+    if (alert) {
+        t.innerHTML = title;
+        m.innerHTML = msg;
+
+        alert.open = true;
+    }
+};
+
+bbbMap.finishSketch = function (graphic, tool) {
+    console.log("finishSketch", graphic, tool);
+    if (graphic && graphic.geometry) {
+        let size = bbbMap.esri.geometryEngine.geodesicArea(graphic.geometry, "square-miles");
+        if (size > bbbMap.MAX_AREA) {
+            bbbMap.showAlert("error", `Shape Error with ${tool}`, `Shape is over the ${bbbMap.MAX_AREA} square mile limit (area is ${bbbMap.Number.format(size)}).  Please try again.`);
+        } else {
+            bbbMap.showAlert("success", `Filtering with ${tool}`, `Looking for tracts in ${bbbMap.Number.format(size)} square miles.`);
+            //const div = document.createElement("div");
+            //div.innerHTML = `Looking for tracts in ${bbbMap.Number.format(size)} square mile ${tool}.`;
+            //bbbMap.view.ui.add(div, "top-left");
+            bbbMap.getNearbyTracts(graphic, tool);
+        }
+    }
+};
+
+bbbMap.refreshTractInfo = function (feature) {
+    console.log("refreshTractInfo", feature);
+    let p;
+    if (feature && feature.geometry) {
+        if (feature.geometry.centroid) {
+            p = { latitude: feature.geometry.centroid.latitude, longitude: feature.geometry.centroid.longitude, type: "point" };
+        } else {
+            p = { latitude: feature.geometry.latitude, longitude: feature.geometry.longitude, type: "point" };
+        }
+    } else {
+        p = bbbMap.point;
+    }
+
+    bbbMap.getFFIEC(p, { matchedAddress: "Click" });
+};
+bbbMap.getNearbyTracts = async function (feature, tool) {
+    console.log("getNearbyTracts", feature, tool);
+    let point, geom;
+    try {
+        if (bbbMap?.tractShapeLayer) {
+            bbbMap?.tractShapeLayer.destroy();
+        }
+
+        if (tool) {
+            geom = feature.geometry;
+        } else {
+            point = feature ? feature.geometry : bbbMap?.point;
+            geom = bbbMap.esri.geometryEngine.geodesicBuffer(point, bbbMap.BUFFER_SIZE, "miles");
+        }
+
+        const q = {
+            where: "1=1",
+            outFields: ["*"],
+            geometry: geom,
+            spatialRelationship: "intersects",
+            returnGeometry: true,
+            returnCentroid: true,
+        };
+
+        console.log("getNearbyTracts Query", q);
+        const results = await bbbMap.censusTractShapeLayer.queryFeatures(q);
+
+        console.log("getNearbyTracts results", results);
+        if (results.features.length === 0) {
+            throw new Error("Unable to find a census tract for this location");
+        }
+
+        let layer = { id: "tractShapes", title: "Census Tract Shapes", opacity: 0.75, outFields: ["*"], popupEnabled: 1, renderer: { type: "simple", symbol: { type: "simple-fill", color: [183, 172, 131, 0.5], outline: { color: [255, 255, 255, 0.75], width: 0.1 } } }, legendEnabled: 1, visible: 1, fields: results.fields, source: results.features };
+        bbbMap.tractShapeLayer = new bbbMap.esri.FeatureLayer(layer);
+
+        const response = await bbbMap.esri.colorRendererCreator.createContinuousRenderer({
+            layer: bbbMap.tractShapeLayer,
+            field: "B19049_001E",
+            view: bbbMap.view,
+            baseMape: bbbMap.map.basemap,
+        });
+        bbbMap.tractShapeLayer.renderer = response.renderer;
+
+        bbbMap.tractShapeLayerView = await bbbMap.map.add(bbbMap.tractShapeLayer);
+
+        bbbMap.tractShapeLayer.queryExtent().then((response) => {
+            bbbMap.view.goTo(response.extent.expand(1.2), bbbMap.goToOptions);
+        });
+
+        bbbMap.view.ui.add(bbbMap.legendContainer, "bottom-right");
+
+        //bbbMap.view.ui.add()
+
+        if (bbbMap.view.popup && bbbMap.view.popup.visible) {
+            bbbMap.view.popup.close();
+        }
+
+        //if (!tool) {
+        const area = bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles");
+        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within ${bbbMap.Number.format(area)} square miles.`);
+        //}
+    } catch (e) {
+        bbbMap.showAlert("error", `Error Getting Tracts`, `${e.message}`);
+    }
+};
 bbbMap.ui = function () {
     bbbMap.parameters = document.getElementById("parameters");
     bbbMap.mainPanel = document.getElementById("mainPanel");
@@ -164,7 +312,7 @@ bbbMap.getFFIEC = async function (point, census) {
 
         if (ffiecResults) {
             console.log("ffiecResult", ffiecResults);
-            //bbbMap.doMap(point, ffiecResult, census);
+            bbbMap.doMap(point, ffiecResults, census);
 
             const block = document.createElement("calcite-block");
             block.heading = "FFIEC Information";
@@ -187,14 +335,75 @@ bbbMap.getFFIEC = async function (point, census) {
                     table2.appendChild(bbbMap.addRow(key, ffiecResults[key]));
                 }
             }
-            console.log("tabs", table2);
-            block.appendChild(table2);
+            console.log("tabs", tabs);
+            block.appendChild(tabs);
             bbbMap.mainPanel.appendChild(block);
         }
     }
 };
+
+bbbMap.doMap = function (point, ffiecResults, census) {
+    console.log("doMap", point, ffiecResults, census);
+    bbbMap.graphicsLayer.removeAll();
+    let symbol = { type: "simple-marker", style: "circle", size: 10, color: [255, 125, 0, 0.75] };
+
+    let attributes = Object.assign({}, point, ffiecResults, { matchedAddress: census.matchedAddress });
+
+    console.log("attributes", attributes);
+
+    const popupTemplate = {
+        title: "{matchedAddress}",
+        content: "This tract has a stuff",
+    };
+
+    const graphic = new bbbMap.esri.Graphic({ geometry: point, attributes: attributes, popupTemplate: popupTemplate, symbol: symbol });
+    bbbMap.graphicsLayer.add(graphic);
+    let opt = { center: [point.longitude, point.latitude], zoom: 12 };
+    bbbMap.view.goTo(opt, bbbMap.goToOptions);
+};
+
 bbbMap.getTabs = function (results) {
     console.log("getTabs", results);
+    const tabs = document.createElement("calcite-tabs");
+    tabs.layout = "inline";
+    const nav = document.createElement("calcite-tab-nav");
+    nav.slot = "title-group";
+
+    bbbMap.ffiecDictionary.forEach((tab) => {
+        const title = document.createElement("calcite-tab-title");
+        title.innerHTML = tab.tabName;
+        title.selected = tab.tabSelected;
+        nav.appendChild(title);
+    });
+
+    tabs.appendChild(nav);
+
+    bbbMap.ffiecDictionary.forEach((data) => {
+        console.log(data.tabName, data.def.length);
+        const tab = document.createElement("calcite-tab");
+        tab.selected = data.tabSelected;
+
+        const table = bbbMap.getTable();
+
+        data.def.forEach((column) => {
+            let val = results[column.name];
+            if (column.format) {
+                if (column.format === "boolean") {
+                    val = parseInt(val, 10) === 1 ? "Yes" : "No";
+                } else {
+                    val = bbbMap[column.format].format(val);
+                }
+            }
+            console.log("...Adding Tab", column.name, val);
+            table.appendChild(bbbMap.addRow(column.alias, val));
+        });
+        console.log("...Tabs Added");
+        tab.appendChild(table);
+        tabs.appendChild(tab);
+        console.log("...done");
+    });
+
+    /*
     const tabs = document.createElement("calcite-tabs");
     tabs.layout = "inline";
 
@@ -218,7 +427,7 @@ bbbMap.getTabs = function (results) {
         tab.selected = data.tabSelected;
         tabs.appendChild(tab);
         tab.innerHTML = "hi";
-        /*
+ //
         const table = bbbMap.getTable();
 
         data.def.forEach((column) => {
@@ -232,9 +441,10 @@ bbbMap.getTabs = function (results) {
         console.log("...Tabs Added");
         tab.appendChild(table);
         console.log("...done");
-        */
+       
     });
     console.log("Tabs complete", tabs);
+ */
     return tabs;
 };
 
@@ -332,8 +542,72 @@ bbbMap.census.geocoder = function (address) {
 };
 
 bbbMap.ffiecDictionary = [
-    { tabName: "Census", tabSelected: true, def: [{ name: "Income_Indicator", alias: "Tract Income Level" }] },
-    { tabName: "Income", tabSelected: true, def: [{ name: "Income_Indicator", alias: "Tract Income Level" }] },
-    { tabName: "Population", tabSelected: true, def: [{ name: "Income_Indicator", alias: "Tract Income Level" }] },
-    { tabName: "Housing", tabSelected: true, def: [{ name: "Income_Indicator", alias: "Tract Income Level" }] },
+    {
+        tabName: "Census",
+        tabSelected: true,
+        def: [
+            { name: "Income_Indicator", alias: "Tract Income Level" },
+            { name: "DistressedTractInd", alias: "Underserved or Distressed Tract" },
+            { name: "HUD_est_MSA_MFI", alias: "2024 FFIEC Estimated MSA/MD/non-MSA/MD Median Family Income", format: "USDollar" },
+            { name: "Est_Income", alias: "2024 Estimated Tract Median Family Income", format: "USDollar" },
+            { name: "Decennial_Tract_MFI", alias: "2020 Tract Median Family Income", format: "USDollar" },
+            { name: "MSA_MFI_pct", alias: "Tract Median Family Income %", format: "Number" },
+            { name: "Population", alias: "Tract Population", format: "Number" },
+            { name: "Minority_percentage", alias: "Tract Minority %", format: "Number" },
+            { name: "Minority_Population", alias: "Tract Minority Population", format: "Number" },
+            { name: "Owner_occupied_units", alias: "Owner-Occupied Units", format: "Number" },
+            { name: "Num_1_to_4_units", alias: "1- to 4- Family Units", format: "Number" },
+        ],
+    },
+    {
+        tabName: "Income",
+        tabSelected: false,
+        def: [
+            { name: "Income_Indicator", alias: "Tract Income Level" },
+            { name: "Decennial_MSA_MFI", alias: "2020 MSA/MD/statewide non-MSA/MD Median Family Income", format: "USDollar" },
+            { name: "HUD_est_MSA_MFI", alias: "2024 FFIEC Estimated MSA/MD/non-MSA/MD Median Family Income", format: "USDollar" },
+            { name: "Poverty_level_percentage", alias: "% below Poverty Line", format: "Number" },
+            { name: "MSA_MFI_pct", alias: "Tract Median Family Income %", format: "Number" },
+            { name: "Decennial_Tract_MFI", alias: "2020 Tract Median Family Income", format: "USDollar" },
+            { name: "Est_Income", alias: "2024 Estimated Tract Median Family Income", format: "USDollar" },
+            { name: "Decennial_Tract_MHI", alias: "2020 Tract Median Household Income", format: "USDollar" },
+        ],
+    },
+    {
+        tabName: "Population",
+        tabSelected: false,
+        def: [
+            { name: "Population", alias: "Tract Population", format: "Number" },
+            { name: "Minority_percentage", alias: "Tract Minority %", format: "Number" },
+            { name: "Family_count", alias: "Number of Families", format: "Number" },
+            { name: "Total_housing_units", alias: "Number of Households", format: "Number" },
+            { name: "Non_hispanic_white", alias: "Non-Hispanic White Population", format: "Number" },
+            { name: "Minority_Population", alias: "Tract Minority Population", format: "Number" },
+            { name: "Non_hispanic_american_indian", alias: "American Indian Population", format: "Number" },
+            { name: "Non_hispanic_asian", alias: "Asian/Hawaiian/Pacific Islander Population", format: "Number" },
+            { name: "Non_hispanic_black", alias: "Black Population", format: "Number" },
+            { name: "Hispanics", alias: "Hispanic Population", format: "Number" },
+            { name: "Non_hispanic_other", alias: "Other/Two or More Races Population", format: "Number" },
+        ],
+    },
+    {
+        tabName: "Housing",
+        tabSelected: false,
+        def: [
+            { name: "Household_count", alias: "Total Housing Units", format: "Number" },
+            { name: "Num_1_to_4_units", alias: "1- to 4- Family Units", format: "Number" },
+            { name: "Median_unit_age", alias: "Median House Age (Years)", format: "Number" },
+            { name: "Owner_occupied_units", alias: "Owner-Occupied Units", format: "Number" },
+            { name: "Renter_occupied_units", alias: "Renter Occupied Units", format: "Number" },
+            { name: "Own_occ_1_to_4_units", alias: "Owner Occupied 1- to 4- Family Units", format: "Number" },
+            { name: "Central_City_Flag", alias: "Inside Principal City?", format: "boolean" },
+            { name: "Units_vacant", alias: "Vacant Units", format: "Number" },
+        ],
+    },
 ];
+
+bbbMap.Number = new Intl.NumberFormat("en-US");
+bbbMap.USDollar = new Intl.NumberFormat("en-us", { maximumFractionDigits: 0, style: "currency", currency: "USD" });
+
+bbbMap.BUFFER_SIZE = 3;
+bbbMap.MAX_AREA = 100;
