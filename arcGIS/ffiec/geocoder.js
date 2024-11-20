@@ -57,13 +57,11 @@ bbbMap.initMap = () => {
             bbbMap.legendContainer = document.createElement("div");
             bbbMap.legendWidget = new Legend({ view: bbbMap.view, container: bbbMap.legendContainer });
 
-            console.log("adding shape service");
-            bbbMap.censusTractShapeService = new FeatureLayer({ id: "censusTractService", url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Median_Income_by_Race_and_Age_Selp_Emp_Boundaries/FeatureServer/2" });
-
             console.log("graphics layer");
             bbbMap.graphicsLayer = new GraphicsLayer({ id: "graphicsLayer", popupEnabled: 1, title: "Graphics" });
             bbbMap.map.add(bbbMap.graphicsLayer);
 
+            console.log("referencing shape service, but not adding to map");
             bbbMap.censusTractShapeLayer = new FeatureLayer({ id: "censusTractService", url: bbbMap.censusTractService });
 
             bbbMap.view.on("immediate-click", (e) => {
@@ -227,6 +225,12 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
             geom = bbbMap.esri.geometryEngine.geodesicBuffer(point, bbbMap.BUFFER_SIZE, "miles");
         }
 
+        if (bbbMap.bufferGraphic) {
+            bbbMap.graphicsLayer.remove(bbbMap.bufferGraphic);
+        }
+        bbbMap.bufferGraphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
+        bbbMap.graphicsLayer.add(bbbMap.bufferGraphic);
+
         const q = {
             where: "1=1",
             outFields: ["*"],
@@ -271,7 +275,7 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
 
         //if (!tool) {
         const area = bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles");
-        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within ${bbbMap.Number.format(area)} square miles.`);
+        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within a ${bbbMap.BUFFER_SIZE} mile radius (${bbbMap.Number.format(area)} square miles).`);
         //}
     } catch (e) {
         bbbMap.showAlert("error", `Error Getting Tracts`, `${e.message}`);
@@ -347,13 +351,20 @@ bbbMap.doMap = function (point, ffiecResults, census) {
     bbbMap.graphicsLayer.removeAll();
     let symbol = { type: "simple-marker", style: "circle", size: 10, color: [255, 125, 0, 0.75] };
 
+    let tract;
+    if (census?.geographies) {
+        tract = census.geographies["Census Tracts"][0].NAME;
+    } else {
+        tract = "This tract";
+    }
     let attributes = Object.assign({}, point, ffiecResults, { matchedAddress: census.matchedAddress });
 
     console.log("attributes", attributes);
 
     const popupTemplate = {
         title: "{matchedAddress}",
-        content: "This tract has a stuff",
+        //content: "This tract has a medium household income of {Decennial_Tract_MFI} or {MSA_MFI_pct} of the MSA making it an {Income_Indicator} income tract",
+        content: `${tract} has a medium household income of ${bbbMap.USDollar.format(ffiecResults.Decennial_Tract_MFI)} or ${ffiecResults.MSA_MFI_pct}% of the MSA making it an ${ffiecResults.Income_Indicator} income tract`,
     };
 
     const graphic = new bbbMap.esri.Graphic({ geometry: point, attributes: attributes, popupTemplate: popupTemplate, symbol: symbol });
@@ -605,6 +616,15 @@ bbbMap.ffiecDictionary = [
         ],
     },
 ];
+
+bbbMap.bufferedSymbol = {
+    type: "simple-fill",
+    color: [255, 255, 0, 0.05],
+    outline: {
+        color: [255, 255, 0, 0.3],
+        width: 0.5,
+    },
+};
 
 bbbMap.Number = new Intl.NumberFormat("en-US");
 bbbMap.USDollar = new Intl.NumberFormat("en-us", { maximumFractionDigits: 0, style: "currency", currency: "USD" });
