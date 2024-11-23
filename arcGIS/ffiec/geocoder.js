@@ -3,13 +3,14 @@ const bbbMap = {};
 bbbMap.init = () => {
     console.log("bbbMap.init");
     bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
-    bbbMap.censusTractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Median_Income_by_Race_and_Age_Selp_Emp_Boundaries/FeatureServer/2";
+    //bbbMap.censusTractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Median_Income_by_Race_and_Age_Selp_Emp_Boundaries/FeatureServer/2";
+    bbbMap.censusTractService = "https://services.arcgis.com/XG15cJAlne2vxtgt/ArcGIS/rest/services/National_Risk_Index_Census_Tracts/FeatureServer/0";
     bbbMap.goToOptions = { animate: true, animationMode: "auto", duration: 1000, maxDuration: 2000, easing: "ease" };
     bbbMap.initMap();
 };
 
 bbbMap.initMap = () => {
-    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator) =>
+    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color", "esri/PopupTemplate"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator, PopupTemplate) =>
         (async () => {
             esriConfig.apiKey = bbbMap.apiKey;
 
@@ -23,6 +24,7 @@ bbbMap.initMap = () => {
             bbbMap.esri.Point = Point;
             bbbMap.esri.Sketch = Sketch;
             bbbMap.esri.colorRendererCreator = colorRendererCreator;
+            bbbMap.esri.PopupTemplate = PopupTemplate;
 
             console.log("Building Map");
 
@@ -30,12 +32,15 @@ bbbMap.initMap = () => {
 
             bbbMap.view = new MapView({
                 map: bbbMap.map,
-                center: [-96.3537, 40.6698],
-                zoom: 4,
-                highlightOption: {
-                    color: [255, 255, 0, 0.75],
-                    haloOpacity: 0.8,
-                    fillOpacity: 0.25,
+                //center: [-96.3537, 40.6698],
+                center: [-80.54993452144528, 25.26285858333048],
+                //zoom: 4,
+                zoom: 9,
+                highlightOptions: {
+                    color: [255, 255, 0, 0],
+                    haloColor: "#ffff00",
+                    haloOpacity: 0.5,
+                    fillOpacity: 0,
                 },
                 popupEnabled: true,
                 popup: {
@@ -44,8 +49,9 @@ bbbMap.initMap = () => {
                     actions: [
                         { title: "Nearby Tracts", id: "find-nearby-tracts", icon: "polygon" },
                         { title: "Refresh Census Demographics", id: "refresh-tract-info", icon: "information" },
+                        //{ title: "Summarize Area", id: "get-summary-report", icon: "file-report" },
                     ],
-                    dockEnabled: 0,
+                    dockEnabled: 1,
                     dockOptions: {
                         buttonEnabled: 0,
                         breakpoint: 0,
@@ -63,8 +69,9 @@ bbbMap.initMap = () => {
 
             console.log("referencing shape service, but not adding to map");
             bbbMap.censusTractShapeLayer = new FeatureLayer({ id: "censusTractService", url: bbbMap.censusTractService });
+            //bbbMap.map.add(bbbMap.censusTractShapeLayer);
 
-            bbbMap.view.on("immediate-click", (e) => {
+            bbbMap.view.on("immediate-click", async (e) => {
                 console.log("Map click", e);
                 if (e.button === 2) {
                     bbbMap.point = e.mapPoint;
@@ -73,6 +80,12 @@ bbbMap.initMap = () => {
                         content: `Clicked ${e.mapPoint.latitude}, ${e.mapPoint.longitude} refresh census demographics to analyze this point`,
                         location: e.mapPoint,
                     });
+                }
+
+                const response = await bbbMap.view.hitTest(e);
+                const results = response.results.filter((result) => result.graphic && result.graphic.layer === bbbMap.tractShapeLayer);
+                if (results.length > 0) {
+                    console.log("you clicked on a tract shape", results[0].graphic);
                 }
             });
 
@@ -94,13 +107,13 @@ bbbMap.initMap = () => {
                     let feature = bbbMap.view.popup.selectedFeature;
 
                     if (e.action.id === "find-nearby-tracts") {
-                        console.log("Popup Call: find-nearby-branches");
                         bbbMap.getNearbyTracts(feature);
-                        //bbbMap.getNearbyBranches(bbbMap.view.popup.selectedFeature, bbbMap._bufferSize);
                     }
                     if (e.action.id === "refresh-tract-info") {
-                        console.log("Popup Call: refresh-tract-info");
                         bbbMap.refreshTractInfo(feature);
+                    }
+                    if (e.action.id === "get-summary-report") {
+                        bbbMap.getSummaryReport();
                     }
                 }
             );
@@ -123,8 +136,9 @@ bbbMap.initMap = () => {
 
             //view is ready
             bbbMap.view.when((view) => {
-                console.log("Map.view created", view);
+                console.log("View is ready.  Setup UI and Sketch Tools", view);
                 bbbMap.ui();
+                bbbMap.view.popup.highlightEnabled = true;
 
                 bbbMap.sketchLayer = new GraphicsLayer();
                 bbbMap.map.add(bbbMap.sketchLayer);
@@ -166,7 +180,7 @@ bbbMap.initMap = () => {
         })()); //end require
 };
 
-bbbMap.showAlert = function (type, title, msg) {
+bbbMap.showAlertxx = function (type, title, msg) {
     console.log("showAlert", type, title, msg);
     const alert = document.getElementById(`${type}Alert`);
     const t = document.getElementById(`${type}Title`);
@@ -179,12 +193,29 @@ bbbMap.showAlert = function (type, title, msg) {
     }
 };
 
+bbbMap.showAlert = function (type, title, msg, node) {
+    console.log("showAlert", type, title, msg);
+    const alert = document.getElementById(`alert`);
+    const t = document.getElementById(`alertTitle`);
+    const m = document.getElementById(`alertMsg`);
+
+    if (alert) {
+        t.innerHTML = title;
+        m.innerHTML = msg;
+        if (node) {
+            alert.appendChild(node);
+        }
+        alert.kind = type;
+        alert.open = true;
+    }
+};
+
 bbbMap.finishSketch = function (graphic, tool) {
     console.log("finishSketch", graphic, tool);
     if (graphic && graphic.geometry) {
         let size = bbbMap.esri.geometryEngine.geodesicArea(graphic.geometry, "square-miles");
         if (size > bbbMap.MAX_AREA) {
-            bbbMap.showAlert("error", `Shape Error with ${tool}`, `Shape is over the ${bbbMap.MAX_AREA} square mile limit (area is ${bbbMap.Number.format(size)}).  Please try again.`);
+            bbbMap.showAlert("danger", `Shape Error with ${tool}`, `Shape is over the ${bbbMap.MAX_AREA} square mile limit (area is ${bbbMap.Number.format(size)}).  Please try again.`);
         } else {
             bbbMap.showAlert("success", `Filtering with ${tool}`, `Looking for tracts in ${bbbMap.Number.format(size)} square miles.`);
             //const div = document.createElement("div");
@@ -193,6 +224,247 @@ bbbMap.finishSketch = function (graphic, tool) {
             bbbMap.getNearbyTracts(graphic, tool);
         }
     }
+};
+
+bbbMap.getSum = function (attr) {
+    let data = bbbMap?.tractShapeLayerSource?.source;
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0);
+        }
+    } catch (e) {
+        console.log("Error getting Sum", e, attr);
+    }
+    return rtn;
+};
+
+bbbMap.getAvg = function (attr) {
+    let data = bbbMap?.tractShapeLayerSource?.source;
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0) / data.length;
+        }
+    } catch (e) {
+        console.log("Error getting Avg", e, attr);
+    }
+    return rtn;
+};
+
+bbbMap.getMin = function (attr) {
+    let data = bbbMap?.tractShapeLayerSource?.source;
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((min, item) => (item.attributes[attr] < min ? item.attributes[attr] : min), Infinity);
+        }
+    } catch (e) {
+        console.log("Error getting Min", e);
+    }
+    return rtn;
+};
+
+bbbMap.getMax = function (attr) {
+    let data = bbbMap?.tractShapeLayerSource?.source;
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((max, item) => (item.attributes[attr] > max ? item.attributes[attr] : max), -Infinity);
+        }
+    } catch (e) {
+        console.log("Error getting Max", e);
+    }
+    return rtn;
+};
+
+bbbMap.applyFxn = function (fxn, attr) {
+    return fxn(attr);
+};
+
+bbbMap.getSummaryReport = function () {
+    console.log("getSummaryReport");
+    const modal = document.createElement("calcite-dialog");
+    const modalContent = document.createElement("div");
+    modal.modal = true;
+    modal.open = true;
+    modal.heading = "Area Summary Report";
+    modal.slot = "dialogs";
+    modalContent.classList.add("searchCardContainer");
+    //modal.scale = "l";
+    //modal.widthScale = "l";
+
+    //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
+    let data = bbbMap.tractShapeLayerSource.source;
+    let tracts = data.length;
+    let counties = [...new Set(data.map((i) => i.attributes.COUNTY))];
+    let countyTxt = counties.join(", ");
+    const headerDiv = document.createElement("div");
+    headerDiv.innerHTML = `<h2>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<h2>`;
+    modal.appendChild(headerDiv);
+    let summaryReport = [];
+
+    //build report struture
+    ["eal", "nri", "sovi", "cr"].forEach((g) => {
+        console.log("group", g);
+        let category = bbbMap.climateCols[g];
+        if (category) {
+            let reportGroups = category.filter((t) => t?.report);
+            console.log("report groups", reportGroups);
+            reportGroups.forEach((rg) => {
+                summaryReport.push(rg);
+            });
+        }
+    });
+
+    console.log("summaryReport", summaryReport);
+    summaryReport.forEach((g, i) => {
+        console.log("Report group", g);
+        const block = document.createElement("calcite-block");
+        block.heading = g?.reportName;
+        let open = i === 0 ? true : false;
+        block.open = open;
+        block.collapsible = true;
+        const table = bbbMap.getTable();
+
+        g.report.forEach((e) => {
+            //console.log("Report", e);
+            let val = bbbMap.applyFxn(e.fxn, g.name);
+            let title = e.title;
+            //console.log("here we go", val, title);
+            table.appendChild(bbbMap.addRow(title, bbbMap[g.type].format(val)));
+        });
+        block.appendChild(table);
+        modal.appendChild(block);
+    });
+
+    document.querySelector("calcite-shell").appendChild(modal);
+};
+
+bbbMap.getSummaryReportxxx = function () {
+    console.log("getSummaryReport");
+    const modal = document.createElement("calcite-dialog");
+    const modalContent = document.createElement("div");
+    modal.modal = true;
+    modal.open = true;
+    modal.heading = "Area Summary Report";
+    modal.slot = "dialogs";
+    modalContent.classList.add("searchCardContainer");
+    //modal.scale = "l";
+    //modal.widthScale = "l";
+
+    //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
+
+    let tracts = bbbMap.tractShapeLayerSource.source.length;
+    let loss = bbbMap.getSum("EAL_VALT");
+
+    //bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.EAL_VALT, 0);
+    let lossScoreAvg = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.EAL_SCORE, 0) / tracts;
+
+    let area = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.AREA, 0);
+    let risk = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.RISK_SCORE, 0) / tracts;
+
+    let riskMin = bbbMap.tractShapeLayerSource.source.reduce((min, item) => (item.attributes.RISK_SCORE < min ? item.attributes.RISK_SCORE : min), Infinity);
+    let riskMax = bbbMap.tractShapeLayerSource.source.reduce((max, item) => (item.attributes.RISK_SCORE > max ? item.attributes.RISK_SCORE : max), -Infinity);
+
+    let soviScoreAvg = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.SOVI_SCORE, 0) / tracts;
+    let soviScoreMin = bbbMap.tractShapeLayerSource.source.reduce((min, item) => (item.attributes.SOVI_SCORE < min ? item.attributes.SOVI_SCORE : min), Infinity);
+    let soviScoreMax = bbbMap.tractShapeLayerSource.source.reduce((max, item) => (item.attributes.SOVI_SCORE > max ? item.attributes.SOVI_SCORE : max), -Infinity);
+
+    let reslScoreAvg = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.RESL_SCORE, 0) / tracts;
+    let reslScoreMin = bbbMap.tractShapeLayerSource.source.reduce((min, item) => (item.attributes.RESL_SCORE < min ? item.attributes.RESL_SCORE : min), Infinity);
+    let reslScoreMax = bbbMap.tractShapeLayerSource.source.reduce((max, item) => (item.attributes.RESL_SCORE > max ? item.attributes.RESL_SCORE : max), -Infinity);
+
+    //let totalLoss = bbbMap.getCard("Total Estimated Loss", bbbMap.USDollar.format(r));
+    /*
+    modalContent.appendChild(bbbMap.getCard("Total Tracts", bbbMap.Number.format(tracts)));
+    modalContent.appendChild(bbbMap.getCard("Total Area (sq mi)", bbbMap.Number.format(area)));
+    modalContent.appendChild(bbbMap.getCard("Average Risk Score", bbbMap.Number.format(risk)));
+    modalContent.appendChild(bbbMap.getCard("Minimum Risk Score", bbbMap.Number.format(riskMin)));
+    modalContent.appendChild(bbbMap.getCard("Maximum Risk Score", bbbMap.Number.format(riskMax)));
+
+    modalContent.appendChild(bbbMap.getCard("Total Estimated Loss", bbbMap.USDollar.format(loss)));
+    modalContent.appendChild(bbbMap.getCard("Average Loss Score", bbbMap.Number.format(lossScoreAvg)));
+
+    modalContent.appendChild(bbbMap.getCard("Average Risk Score", bbbMap.Number.format(risk)));
+    modalContent.appendChild(bbbMap.getCard("Minimum Risk Score", bbbMap.Number.format(riskMin)));
+    modalContent.appendChild(bbbMap.getCard("Maximum Risk Score", bbbMap.Number.format(riskMax)));
+
+    modalContent.appendChild(bbbMap.getCard("Average Social Vulnerability", bbbMap.Number.format(soviScoreAvg)));
+    modalContent.appendChild(bbbMap.getCard("Minimum Social Vulnerability", bbbMap.Number.format(soviScoreMin)));
+    modalContent.appendChild(bbbMap.getCard("Maximum Social Vulnerability", bbbMap.Number.format(soviScoreMax)));
+
+    modalContent.appendChild(bbbMap.getCard("Average Community Resiliance", bbbMap.Number.format(reslScoreAvg)));
+    modalContent.appendChild(bbbMap.getCard("Minimum Community Resiliance", bbbMap.Number.format(reslScoreMin)));
+    modalContent.appendChild(bbbMap.getCard("Maximum Community Resiliance", bbbMap.Number.format(reslScoreMax)));
+*/
+    const ealBlock = document.createElement("calcite-block");
+    ealBlock.heading = "Estimated Loss Summary";
+    ealBlock.open = true;
+    const ealTable = bbbMap.getTable();
+    ealTable.appendChild(bbbMap.addRow("Total Estimated Loss", bbbMap.USDollar.format(loss)));
+    ealTable.appendChild(bbbMap.addRow("Average Loss Score", bbbMap.Number.format(lossScoreAvg)));
+    ealTable.appendChild(bbbMap.addRow("Total Tracts", bbbMap.Number.format(tracts)));
+    ealTable.appendChild(bbbMap.addRow("Total Area (sq mi)", bbbMap.Number.format(area)));
+    ealBlock.appendChild(ealTable);
+
+    const riskBlock = document.createElement("calcite-block");
+    riskBlock.heading = "Risk Summary";
+    riskBlock.open = true;
+    const riskTable = bbbMap.getTable();
+    riskTable.appendChild(bbbMap.addRow("Average Risk Score", bbbMap.Number.format(risk)));
+    riskTable.appendChild(bbbMap.addRow("Minimum Risk Score", bbbMap.Number.format(riskMin)));
+    riskTable.appendChild(bbbMap.addRow("Maximum Risk Score", bbbMap.Number.format(riskMax)));
+    riskBlock.appendChild(riskTable);
+
+    const soviBlock = document.createElement("calcite-block");
+    soviBlock.heading = "Social Vulnerability Summary";
+    soviBlock.open = true;
+    const soviTable = bbbMap.getTable();
+    soviTable.appendChild(bbbMap.addRow("Average Social Vulnerability", bbbMap.Number.format(soviScoreAvg)));
+    soviTable.appendChild(bbbMap.addRow("Minimum Social Vulnerability", bbbMap.Number.format(soviScoreMin)));
+    soviTable.appendChild(bbbMap.addRow("Maximum Social Vulnerability", bbbMap.Number.format(soviScoreMax)));
+    soviBlock.appendChild(soviTable);
+
+    const reslBlock = document.createElement("calcite-block");
+    reslBlock.heading = "Community Resiliance Summary";
+    reslBlock.open = true;
+    const reslTable = bbbMap.getTable();
+    reslTable.appendChild(bbbMap.addRow("Average Community Resiliance", bbbMap.Number.format(reslScoreAvg)));
+    reslTable.appendChild(bbbMap.addRow("Minimum Community Resiliance", bbbMap.Number.format(reslScoreMin)));
+    reslTable.appendChild(bbbMap.addRow("Maximum Community Resiliance", bbbMap.Number.format(reslScoreMax)));
+    reslBlock.appendChild(reslTable);
+
+    modal.appendChild(ealBlock);
+    modal.appendChild(riskBlock);
+    modal.appendChild(soviBlock);
+    modal.appendChild(reslBlock);
+    //modal.appendChild(modalContent);
+    document.querySelector("calcite-shell").appendChild(modal);
+    //
+};
+
+bbbMap.getCard = function (heading, msg) {
+    const card = document.createElement("calcite-card");
+    const div = document.createElement("div");
+    const chipLabel = document.createElement("calcite-chip");
+    const chip = document.createElement("calcite-chip");
+    div.slot = "heading";
+    div.innerHTML = heading;
+
+    chipLabel.kind = "";
+    chipLabel.innerHTML = heading;
+    chipLabel.slot = "footer-start";
+
+    chip.kind = "brand";
+    chip.innerHTML = msg;
+    chip.slot = "footer-start";
+
+    //card.innerHTML = `${c}: ${bbbMap.Number.format(r)}`;
+    //card.appendChild(div);
+    card.appendChild(chipLabel);
+    card.appendChild(chip);
+    return card;
 };
 
 bbbMap.refreshTractInfo = function (feature) {
@@ -242,23 +514,59 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
 
         console.log("getNearbyTracts Query", q);
         const results = await bbbMap.censusTractShapeLayer.queryFeatures(q);
+        //const results = await bbbMap.tractLayerView.queryFeatures(q);
 
         console.log("getNearbyTracts results", results);
         if (results.features.length === 0) {
             throw new Error("Unable to find a census tract for this location");
         }
 
-        let layer = { id: "tractShapes", title: "Census Tract Shapes", opacity: 0.75, outFields: ["*"], popupEnabled: 1, renderer: { type: "simple", symbol: { type: "simple-fill", color: [183, 172, 131, 0.5], outline: { color: [255, 255, 255, 0.75], width: 0.1 } } }, legendEnabled: 1, visible: 1, fields: results.fields, source: results.features };
-        bbbMap.tractShapeLayer = new bbbMap.esri.FeatureLayer(layer);
+        let layer = {
+            id: "tractShapes",
+            title: "Census Tract Shapes",
+            opacity: 0.75,
+            outFields: ["*"],
+            popupEnabled: 1,
+            popupTemplate: bbbMap.getPopupTemplate(),
+            //renderer: { type: "simple", symbol: { type: "simple-fill", color: [183, 172, 131, 0.5], outline: { color: [255, 255, 255, 0.75], width: 0.1 } } },
+            renderer: bbbMap.getClimateRenderer(bbbMap.focusArea),
+            legendEnabled: 1,
+            visible: 1,
+            /*labelingInfo: [
+                {
+                    labelExpression: `[NAME]`, //$feature.NAME"], labelExpression
+                    symbol: {
+                        type: "text", // autocasts as new TextSymbol()
+                        color: [255, 255, 255, 0.9],
+                        haloSize: 0.0,
+                        haloColor: "white",
+                        font: { size: 9 },
+                    },
+                    deconflictionStrategy: "none",
+                },
+            ],
+            */
+            fields: results.fields,
+            source: results.features,
+        };
 
+        bbbMap.tractShapeLayerSource = layer;
+        console.log("Creating client side feature layer", results.features, layer);
+
+        bbbMap.tractShapeLayer = new bbbMap.esri.FeatureLayer(layer);
+        /*
         const response = await bbbMap.esri.colorRendererCreator.createContinuousRenderer({
             layer: bbbMap.tractShapeLayer,
-            field: "B19049_001E",
+            field: "RISK_SCORE",
             view: bbbMap.view,
             baseMape: bbbMap.map.basemap,
+            theme: "above-and-below",
+            outlineOptimizationEnabled: true,
         });
+
         bbbMap.tractShapeLayer.renderer = response.renderer;
 
+        */
         bbbMap.tractShapeLayerView = await bbbMap.map.add(bbbMap.tractShapeLayer);
 
         bbbMap.tractShapeLayer.queryExtent().then((response) => {
@@ -275,12 +583,66 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
 
         //if (!tool) {
         const area = bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles");
-        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within a ${bbbMap.BUFFER_SIZE} mile radius (${bbbMap.Number.format(area)} square miles).`);
+        //<calcite-action id="action-with-tooltip" text="Layers" icon="layers" text-enabled></calcite-action>
+        let btn = "";
+        if (!document.getElementById("summaryReportBtn")) {
+            btn = document.createElement("calcite-button");
+            //const btn = document.createElement("calcite-action");
+
+            btn.innerHTML = "Summary Report";
+            //btn.text = "Generate Summary Report";
+            btn.slot = "actions-end";
+            btn.iconStart = "file-report";
+            btn.round = false;
+            btn.id = "summaryReportBtn";
+
+            btn.scale = "l";
+            //btn.textEnabled = true;
+            btn.addEventListener("click", (e) => {
+                console.log("Report Button Click", e);
+                bbbMap.getSummaryReport();
+            });
+        }
+        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within a ${bbbMap.BUFFER_SIZE} mile radius (${bbbMap.Number.format(area)} square miles).<br>`, btn);
         //}
     } catch (e) {
-        bbbMap.showAlert("error", `Error Getting Tracts`, `${e.message}`);
+        bbbMap.showAlert("danger", `Error Getting Tracts`, `${e.message}`);
     }
 };
+
+bbbMap.getDictionary = function (area = bbbMap.focusArea) {
+    let d = bbbMap.climateDictionary.find((d) => d.name === area);
+    return d;
+};
+
+bbbMap.getClimateRenderer = function (area = "RISK") {
+    //{ type: "simple-fill", color: [183, 172, 131, 0.5], outline: { color: [255, 255, 255, 0.75], width: 0.1 } } },
+    let dict = bbbMap.getDictionary(area);
+    //let field = dict.legendField;
+    let field = `${area}_${dict.suffix}`;
+    let outline = { color: [255, 255, 255, 0.75], width: 0.5 };
+    let renderer = "";
+    console.log("getClimateRenderer", area, field, dict);
+    if (field) {
+        renderer = {
+            type: "unique-value",
+            field: field,
+            // defaultSymbol: { type: "simple-fill" },
+            uniqueValueInfos: [
+                { value: "Very High", symbol: { type: "simple-fill", color: [199, 68, 93, 0.9], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "Very High" },
+                { value: "Relatively High", symbol: { type: "simple-fill", color: [224, 112, 105, 0.9], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "Relatively High" },
+                { value: "Relatively Moderate", symbol: { type: "simple-fill", color: [240, 213, 93, 0.9], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "Relatively Moderate" },
+                { value: "Relatively Low", symbol: { type: "simple-fill", color: [80, 155, 199, 0.9], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "Relatively Low" },
+                { value: "Very Low", symbol: { type: "simple-fill", color: [77, 109, 189, 0.9], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "Very Low" },
+                { value: "Insufficient Data", symbol: { type: "simple-fill", color: [158, 158, 158, 0.9], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "Insufficient Data" },
+                { value: "Not Applicable", symbol: { type: "simple-fill", color: [158, 158, 158, 0.1], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "Not Applicable" },
+                { value: "No Rating", symbol: { type: "simple-fill", color: [158, 158, 158, 0.1], outline: { color: [255, 255, 255, 0.8], width: 0.5 } }, label: "No Rating" },
+            ],
+        };
+    }
+    return renderer;
+};
+
 bbbMap.ui = function () {
     bbbMap.parameters = document.getElementById("parameters");
     bbbMap.mainPanel = document.getElementById("mainPanel");
@@ -295,6 +657,117 @@ bbbMap.ui = function () {
         console.log("goBtn", e, address);
         bbbMap.census.geocoder(address.value);
     });
+
+    let select = document.createElement("calcite-select");
+    bbbMap.climateDictionary.forEach((c) => {
+        let option = document.createElement("calcite-option");
+        option.value = c.name;
+        option.innerHTML = c.alias;
+        select.appendChild(option);
+    });
+
+    let label = document.createElement("calcite-label");
+    label.innerHTML = "Climate Risk Area";
+    label.layout = "inline";
+    label.appendChild(select);
+
+    select.addEventListener("calciteSelectChange", (e) => {
+        console.log("climate hazard change", e);
+        bbbMap.focusArea = e.target.value;
+        let renderer = bbbMap.getClimateRenderer(bbbMap.focusArea);
+        let layer = bbbMap.map.findLayerById("tractShapes");
+        if (layer && renderer) {
+            layer.renderer = renderer;
+            layer.popupTemplate = bbbMap.updatePopupTemplate();
+        }
+    });
+
+    bbbMap.parameters.prepend(label);
+};
+
+bbbMap.getPopupTemplate = function () {
+    //let a = bbbMap.climateDictionary.find((c) => c.name === bbbMap.focusArea);
+    let a = bbbMap.getDictionary();
+    const template = {
+        title: `${a.alias} for Tract: {TRACT}`,
+        content: bbbMap.getPopupContent,
+    };
+    return template;
+};
+
+bbbMap.updatePopupTemplate = function (feature = bbbMap.feature) {
+    if (feature) {
+        let a = bbbMap.getDictionary();
+        console.log("updatePopupTemplate", a, feature);
+        const template = {
+            title: `${a.alias} for Tract: {TRACT}`,
+            content: bbbMap.getPopupContent(feature),
+        };
+        return template;
+    }
+};
+
+bbbMap.getPopupContent = function (feature) {
+    console.log("getPopupContent", feature);
+    let content = "",
+        dict,
+        cols;
+    if (feature) {
+        bbbMap.feature = feature;
+    }
+
+    const attributes = bbbMap.feature.graphic.attributes;
+    dict = bbbMap.getDictionary(bbbMap.focusArea);
+    console.log("dictionary found", dict);
+    if (dict) {
+        //cols = dict.cols;
+        cols = bbbMap.climateCols[dict.type];
+        console.log("cols found", cols);
+        if (dict.type === "hazard") {
+            cols = cols.map((c) => {
+                return { name: `${bbbMap.focusArea}_${c.name}`, type: c.type, alias: c.alias, category: c.category };
+            });
+        }
+
+        allCols = [...cols, ...bbbMap.climateCols.common];
+        let groups = [...new Set(allCols.map((i) => i.category))];
+        console.log("all cols", allCols, groups);
+
+        let val;
+
+        let status = attributes[`${bbbMap.focusArea}_${dict.suffix}`];
+        content += `<div><h2>Risk: ${status} </h2>  </div>`;
+        content += `<calcite-accordion selection-mode="single">`;
+        groups.forEach((g, i) => {
+            console.log("group", g, i);
+            let columnGroup = allCols.filter((cols) => cols.category === g);
+            console.log(columnGroup);
+
+            //content += `<calcite-block open heading="${g}" collapsible><calcite-table scale="s">`;
+            let expanded = i === 0 ? "expanded" : "";
+            content += `<calcite-accordion-item ${expanded} heading="${g}" icon-start="data"><calcite-table scale="s" bordered>`;
+
+            //allCols.forEach((col) => {
+            columnGroup.forEach((col) => {
+                //console.log("columns", col);
+                val = attributes[col.name];
+                if (val && !isNaN(val) && (col.type === "Number" || col.type === "USDollar")) {
+                    val = bbbMap[col.type].format(val);
+                }
+                content += `<calcite-table-row><calcite-table-cell><strong>${col.alias}: </strong></calcite-table-cell><calcite-table-cell>${val}</calcite-table-cell></calcite-table-row>`;
+            });
+            //content += "</calcite-table></calcite-accordion>";
+            content += "</calcite-table></calcite-accordion-item>";
+        });
+        content += "</calcite-accordion>";
+
+        //////////
+    }
+
+    let div = document.createElement("div");
+    div.innerHTML = content;
+
+    return div;
 };
 
 bbbMap.clearMainPanel = function () {
@@ -302,6 +775,7 @@ bbbMap.clearMainPanel = function () {
         bbbMap.mainPanel.removeChild(bbbMap.mainPanel.firstChild);
     }
 };
+
 bbbMap.getFFIEC = async function (point, census) {
     console.log("getFFIEC", point, census);
     bbbMap.mainPanel.closed = false;
@@ -630,4 +1104,176 @@ bbbMap.Number = new Intl.NumberFormat("en-US");
 bbbMap.USDollar = new Intl.NumberFormat("en-us", { maximumFractionDigits: 0, style: "currency", currency: "USD" });
 
 bbbMap.BUFFER_SIZE = 3;
-bbbMap.MAX_AREA = 100;
+bbbMap.MAX_AREA = 500;
+bbbMap.focusArea = "RISK";
+
+bbbMap.climateDictionary = [
+    { name: "RISK", alias: "Composite Climate", type: "nri", suffix: "RATNG" },
+    { name: "EAL", alias: "Expected Annual Loss", type: "eal", suffix: "RATNG" },
+    { name: "SOVI", alias: "Social Vulnerability", type: "sovi", suffix: "RATNG" },
+    { name: "RESL", alias: "Community Resilience", type: "cr", suffix: "RATNG" },
+    { name: "AVLN", alias: "Avalanche", type: "hazard", suffix: "RISKR" },
+    { name: "CFLD", alias: "Coastal Flooding", type: "hazard", suffix: "RISKR" },
+    { name: "CWAV", alias: "Cold Wave", type: "hazard", suffix: "RISKR" },
+    { name: "DRGT", alias: "Drought", type: "hazard", suffix: "RISKR" },
+    { name: "ERQK", alias: "Earthquake", type: "hazard", suffix: "RISKR" },
+    { name: "HAIL", alias: "Hail", type: "hazard", suffix: "RISKR" },
+    { name: "HWAV", alias: "Heat Wave", type: "hazard", suffix: "RISKR" },
+    { name: "HRCN", alias: "Hurricane", type: "hazard", suffix: "RISKR" },
+    { name: "ISTM", alias: "Ice Storm", type: "hazard", suffix: "RISKR" },
+    { name: "LNDS", alias: "Landslide", type: "hazard", suffix: "RISKR" },
+    { name: "LTNG", alias: "Lightning", type: "hazard", suffix: "RISKR" },
+    { name: "RFLD", alias: "Riverine Flooding", type: "hazard", suffix: "RISKR" },
+    { name: "SWND", alias: "Strong Wind", type: "hazard", suffix: "RISKR" },
+    { name: "TRND", alias: "Tornado", type: "hazard", suffix: "RISKR" },
+    { name: "TSUN", alias: "Tsunami", type: "hazard", suffix: "RISKR" },
+    { name: "VLCN", alias: "Volcanic Activity", type: "hazard", suffix: "RISKR" },
+    { name: "WFIR", alias: "Wildfire", type: "hazard", suffix: "RISKR" },
+    { name: "WNTW", alias: "Winter Weather", type: "hazard", suffix: "RISKR" },
+];
+
+bbbMap.climateCols = {
+    common: [
+        { name: "STATE", alias: "State", type: "string", category: "Tract" },
+        { name: "COUNTY", alias: "County", type: "string", category: "Tract" },
+        { name: "TRACT", alias: "Tract", type: "string", category: "Tract" },
+        { name: "TRACTFIPS", alias: "GEOID", type: "string", category: "Tract" },
+        { name: "POPULATION", alias: "Population", type: "Number", category: "Tract" },
+        { name: "BUILDVALUE", alias: "Building", type: "USDollar", category: "Tract" },
+        { name: "AGRIVALUE", alias: "Agriculture", type: "USDollar", category: "Tract" },
+        { name: "NRI_VER", alias: "Version", type: "string", category: "Tract" },
+    ],
+
+    nri: [
+        { name: "RISK_RATNG", alias: "Rating", type: "string", category: "NRI" },
+        {
+            name: "RISK_SCORE",
+            alias: "Score",
+            type: "Number",
+            category: "NRI",
+            reportName: "Risk Rating",
+            report: [
+                { title: "Avg Risk Score", fxn: bbbMap.getAvg },
+                { title: "Min Risk Score", fxn: bbbMap.getMin },
+                { title: "Max Risk Score", fxn: bbbMap.getMax },
+            ],
+        },
+        { name: "RISK_SPCTL", alias: "State Percentile", type: "Number", category: "NRI" },
+    ],
+    eal: [
+        { name: "EAL_RATNG", alias: "Rating", type: "string", category: "EAL" },
+        {
+            name: "EAL_VALT",
+            alias: "Total Loss",
+            type: "USDollar",
+            category: "EAL",
+            reportName: "Estimated Annual Loss Amount",
+            report: [
+                { title: "Total Estimated Loss", fxn: bbbMap.getSum },
+                { title: "Avg Estimated Loss", fxn: bbbMap.getAvg },
+                { title: "Max Estimated Loss", fxn: bbbMap.getMax },
+            ],
+        },
+        {
+            name: "EAL_SCORE",
+            alias: "Score",
+            type: "Number",
+            category: "EAL",
+            reportName: "Estimated Annual Loss Score",
+            report: [
+                { title: "Avg Score", fxn: bbbMap.getAvg },
+                { title: "Min Score", fxn: bbbMap.getMin },
+                { title: "Max Score", fxn: bbbMap.getMax },
+            ],
+        },
+
+        { name: "EAL_SPCTL", alias: "State Percentile", type: "Number", category: "EAL" },
+        { name: "ALR_NPCTL", alias: "National Percentile", type: "Number", category: "EAL" },
+        { name: "EAL_VALB", alias: "Building Loss", type: "USDollar", category: "EAL" },
+        //{ name: "ALR_VALB", alias: "Building Loss Rate", type: "USDollar", category: "EAL" },
+
+        { name: "EAL_VALA", alias: "Agriculture Loss", type: "USDollar", category: "EAL" },
+        // { name: "ALR_VALA", alias: "Agriculture Loss Rate", type: "USDollar", category: "EAL" },
+
+        { name: "EAL_VALP", alias: "Population Loss", type: "USDollar", category: "EAL" },
+        //{ name: "ALR_VALP", alias: "Population Loss Rate", type: "USDollar", category: "EAL" },
+        // { name: "EAL_VALE", alias: "Population Equivalance Loss", type: "USDollar", category: "EAL" },
+
+        { name: "ALR_VRA_NPCTL", alias: "Social Vulnerability and Community Resilience Rate", type: "Number", category: "EAL" },
+    ],
+    sovi: [
+        { name: "SOVI_RATNG", alias: "Rating", type: "string", category: "SOVI" },
+        {
+            name: "SOVI_SCORE",
+            alias: "Score",
+            type: "Number",
+            category: "SOVI",
+            reportName: "Social Vulnerability",
+            report: [
+                { title: "Avg SOVI Score", fxn: bbbMap.getAvg },
+                { title: "Min SOVI Score", fxn: bbbMap.getMin },
+                { title: "Max SOVI Score", fxn: bbbMap.getMax },
+            ],
+        },
+        { name: "SOVI_SPCTL", alias: "State Percentile", type: "Number", category: "SOVI" },
+    ],
+    cr: [
+        { name: "RESL_RATNG", alias: "Rating", type: "string", category: "Resilience" },
+        {
+            name: "RESL_SCORE",
+            alias: "Score",
+            type: "Number",
+            category: "Resilience",
+            reportName: "Community Resilience Score",
+            report: [
+                { title: "Avg Resilience Score", fxn: bbbMap.getAvg },
+                { title: "Min Resilience Score", fxn: bbbMap.getMin },
+                { title: "Max Resilience Score", fxn: bbbMap.getMax },
+            ],
+        },
+        { name: "RESL_SPCTL", alias: "State Percentile", type: "Number", category: "Resilience" },
+    ],
+    hazard: [
+        { name: "RISKR", alias: "Rating", type: "string", category: "Summary" },
+        //{ name: "RISKV", alias: "Hazard Type Risk Index Value", type: "double" },
+        { name: "RISKS", alias: "Score", type: "Number", category: "Summary" },
+        { name: "EVNTS", alias: "Number of Events", type: "Number", category: "Summary" },
+        { name: "AFREQ", alias: "Frequency", type: "Number", category: "Summary" },
+
+        { name: "EXP_AREA", alias: "Impacted Area (sq mi)", type: "Number", category: "Exposure" },
+        { name: "EXPB", alias: "Building Value", type: "USDollar", category: "Exposure" },
+        { name: "EXPP", alias: "Population", type: "Number", category: "Exposure" },
+        { name: "EXPPE", alias: "Population Equivalence", type: "Number", category: "Exposure" },
+        { name: "EXPA", alias: "Agriculture Value", type: "USDollar", category: "Exposure" },
+        { name: "EXPT", alias: "Total", type: "Number", category: "Exposure" },
+
+        { name: "HLRR", alias: "Total Rating", type: "string", category: "Historic Loss Ratio" },
+        { name: "HLRB", alias: "Buildings", type: "Number", category: "Historic Loss Ratio" },
+        { name: "HLRP", alias: "Population", type: "Number", category: "Historic Loss Ratio" },
+        { name: "HLRA", alias: "Agriculture", type: "Number", category: "Historic Loss Ratio" },
+
+        { name: "EALR", alias: "Rating", type: "string", category: "Expected Annual Loss" },
+        { name: "EALS", alias: "Score", type: "Number", category: "Expected Annual Loss" },
+        { name: "EALT", alias: "Total", type: "Number", category: "Expected Annual Loss" },
+        { name: "ALR_NPCTL", alias: "National Percentile", type: "Number", category: "Expected Annual Loss" },
+        { name: "EALB", alias: "Building Value", type: "USDollar", category: "Expected Annual Loss" },
+        { name: "EALP", alias: "Population", type: "Number", category: "Expected Annual Loss" },
+        { name: "EALPE", alias: "Population Equivalence", type: "Number", category: "Expected Annual Loss" },
+        { name: "EALA", alias: "Agriculture Value", type: "USDollar", category: "Expected Annual Loss" },
+
+        { name: "ALRB", alias: "Building Rate", type: "Number", category: "Expected Annual Loss" },
+        { name: "ALRP", alias: "Population Rate", type: "Number", category: "Expected Annual Loss" },
+        { name: "ALRA", alias: "Agriculture Rate", type: "Number", category: "Expected Annual Loss" },
+    ],
+};
+
+/*
+bbbMap.climateCategories.map((c) => {
+    let cols = temp1.filter((t) => t.name.includes(`${c.name}_`));
+    let m = cols.map((t) => {
+        return { name: t.name, alias: t.alias, type: t.type };
+    }); // {name: t.name, alias: t.alias, type: t.type});
+    c["cols"] = m;
+    return c;
+});
+*/

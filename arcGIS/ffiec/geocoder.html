@@ -34,6 +34,14 @@
             #address {
                 width: 500px;
             }
+
+            .searchCardContainer {
+                margin: 0.75rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                grid-gap: 1rem;
+                justify-content: space-evenly;
+            }
         </style>
 
         <script>
@@ -100,14 +108,22 @@
             <div id="map"></div>
         </calcite-shell>
 
-        <calcite-alert kind="danger" label="alert" id="errorAlert" auto-close icon>
+        <calcite-alert kind="danger" label="alert" id="errorAlert" queue="immediate" icon>
             <div id="errorTitle" slot="title">Error</div>
             <div id="errorMsg" slot="message">Sample Error Message</div>
         </calcite-alert>
 
-        <calcite-alert kind="success" label="success" id="successAlert" queue="immediate" auto-close-duration="fast" auto-close icon>
+        <calcite-alert kind="success" label="success" id="successAlert" queue="immediate" icon>
             <div id="successTitle" slot="title">Success</div>
             <div id="successMsg" slot="message">Success Message</div>
         </calcite-alert>
+
+        <calcite-alert kind="brand" label="success" id="alert" queue="immediate" icon>
+            <div id="alertTitle" slot="title">Title</div>
+            <div id="alertMsg" slot="message">Message</div>
+        </calcite-alert>
     </body>
 </html>
+<!--
+    auto-close-duration="fast" auto-close 
+    -->
