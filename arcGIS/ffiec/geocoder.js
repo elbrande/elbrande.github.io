@@ -282,29 +282,9 @@ bbbMap.applyFxn = function (fxn, attr) {
     return fxn(attr);
 };
 
-bbbMap.getSummaryReport = function () {
-    console.log("getSummaryReport");
-    const modal = document.createElement("calcite-dialog");
-    const modalContent = document.createElement("div");
-    modal.modal = true;
-    modal.open = true;
-    modal.heading = "Area Summary Report";
-    modal.slot = "dialogs";
-    modalContent.classList.add("searchCardContainer");
-    //modal.scale = "l";
-    //modal.widthScale = "l";
-
-    //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
-    let data = bbbMap.tractShapeLayerSource.source;
-    let tracts = data.length;
-    let counties = [...new Set(data.map((i) => i.attributes.COUNTY))];
-    let countyTxt = counties.join(", ");
-    const headerDiv = document.createElement("div");
-    headerDiv.innerHTML = `<h2>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<h2>`;
-    modal.appendChild(headerDiv);
-    let summaryReport = [];
-
+bbbMap.buildSummaryReportContent = function (container) {
     //build report struture
+    let summaryReport = [];
     ["eal", "nri", "sovi", "cr"].forEach((g) => {
         console.log("group", g);
         let category = bbbMap.climateCols[g];
@@ -323,9 +303,11 @@ bbbMap.getSummaryReport = function () {
         const block = document.createElement("calcite-block");
         block.heading = g?.reportName;
         let open = i === 0 ? true : false;
-        block.open = open;
+        block.open = true;
         block.collapsible = true;
+        //block.style = "width: 30%";
         const table = bbbMap.getTable();
+        table.layout = "fixed";
 
         g.report.forEach((e) => {
             //console.log("Report", e);
@@ -335,13 +317,73 @@ bbbMap.getSummaryReport = function () {
             table.appendChild(bbbMap.addRow(title, bbbMap[g.type].format(val)));
         });
         block.appendChild(table);
-        modal.appendChild(block);
+        container.appendChild(block);
+    });
+};
+bbbMap.buildSummaryReportCharts = function (attr, title = "Chart") {
+    console.log("buildSummaryReportCharts");
+    let data = bbbMap?.tractShapeLayerSource?.source;
+    const block = document.createElement("calcite-block");
+    block.heading = title;
+    block.open = true;
+    block.collapsible = true;
+
+    const container = document.createElement("div");
+    container.style.width = "100%";
+    container.style.height = "300px";
+
+    const canvas = document.createElement("canvas");
+    //canvas.width = "300";
+    //canvas.height = "200";
+    container.appendChild(canvas);
+    block.appendChild(container);
+    console.log("canvas", container, canvas);
+    let chartData = data.map((d) => {
+        return { label: d.attributes.TRACTFIPS, risk: d.attributes.RISK_SCORE, sovi: d.attributes.SOVI_SCORE, eal: d.attributes.EAL_SCORE };
     });
 
-    document.querySelector("calcite-shell").appendChild(modal);
+    chartData.sort((a, b) => b.risk - a.risk);
+
+    //let labels = data.map((d) => d.attributes.TRACT);
+    //let risk_score = data.map((d) => d.attributes.RISK_SCORE);
+
+    new Chart(canvas, {
+        type: "line",
+        data: {
+            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
+            datasets: [
+                {
+                    label: "Risk",
+                    data: chartData.map((m) => m.risk), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                },
+                {
+                    label: "Vulnerability",
+                    data: chartData.map((m) => m.sovi), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins :{
+                tooltip: {
+                    enabled: true
+                },
+                legend: {
+                    display: true
+                }
+            },
+            onClick: (event, elements) => {
+                console.log('click'. event, elements, chartData, this);
+
+            }
+        },
+    });
+    //}, 100);
+    return block;
 };
 
-bbbMap.getSummaryReportxxx = function () {
+bbbMap.getSummaryReport = function () {
     console.log("getSummaryReport");
     const modal = document.createElement("calcite-dialog");
     const modalContent = document.createElement("div");
@@ -351,97 +393,28 @@ bbbMap.getSummaryReportxxx = function () {
     modal.slot = "dialogs";
     modalContent.classList.add("searchCardContainer");
     //modal.scale = "l";
-    //modal.widthScale = "l";
+    modal.widthScale = "l";
 
     //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
+    let data = bbbMap.tractShapeLayerSource.source;
+    let tracts = data.length;
+    let area = bbbMap.getSum("AREA");
+    let counties = [...new Set(data.map((i) => `${i.attributes.COUNTY}, ${i.attributes.STATE}`))];
+    let countyTxt = counties.join(", ");
+    const headerDiv = document.createElement("div");
+    headerDiv.innerHTML = `<h3>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<BR>Area ${bbbMap.Number.format(area)} square miles</h3>`;
+    modal.appendChild(headerDiv);
 
-    let tracts = bbbMap.tractShapeLayerSource.source.length;
-    let loss = bbbMap.getSum("EAL_VALT");
+    bbbMap.buildSummaryReportContent(modalContent);
+    modal.appendChild(modalContent);
 
-    //bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.EAL_VALT, 0);
-    let lossScoreAvg = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.EAL_SCORE, 0) / tracts;
+    const riskChart = bbbMap.buildSummaryReportCharts("RISK_SCORE", "Risk Chart");
+    modal.appendChild(riskChart);
 
-    let area = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.AREA, 0);
-    let risk = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.RISK_SCORE, 0) / tracts;
+    //const ealChart = bbbMap.buildSummaryReportCharts("EAL_VALT", "Expected Annual Loss Chart");
+    //modal.appendChild(ealChart);
 
-    let riskMin = bbbMap.tractShapeLayerSource.source.reduce((min, item) => (item.attributes.RISK_SCORE < min ? item.attributes.RISK_SCORE : min), Infinity);
-    let riskMax = bbbMap.tractShapeLayerSource.source.reduce((max, item) => (item.attributes.RISK_SCORE > max ? item.attributes.RISK_SCORE : max), -Infinity);
-
-    let soviScoreAvg = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.SOVI_SCORE, 0) / tracts;
-    let soviScoreMin = bbbMap.tractShapeLayerSource.source.reduce((min, item) => (item.attributes.SOVI_SCORE < min ? item.attributes.SOVI_SCORE : min), Infinity);
-    let soviScoreMax = bbbMap.tractShapeLayerSource.source.reduce((max, item) => (item.attributes.SOVI_SCORE > max ? item.attributes.SOVI_SCORE : max), -Infinity);
-
-    let reslScoreAvg = bbbMap.tractShapeLayerSource.source.reduce((sum, item) => sum + item.attributes.RESL_SCORE, 0) / tracts;
-    let reslScoreMin = bbbMap.tractShapeLayerSource.source.reduce((min, item) => (item.attributes.RESL_SCORE < min ? item.attributes.RESL_SCORE : min), Infinity);
-    let reslScoreMax = bbbMap.tractShapeLayerSource.source.reduce((max, item) => (item.attributes.RESL_SCORE > max ? item.attributes.RESL_SCORE : max), -Infinity);
-
-    //let totalLoss = bbbMap.getCard("Total Estimated Loss", bbbMap.USDollar.format(r));
-    /*
-    modalContent.appendChild(bbbMap.getCard("Total Tracts", bbbMap.Number.format(tracts)));
-    modalContent.appendChild(bbbMap.getCard("Total Area (sq mi)", bbbMap.Number.format(area)));
-    modalContent.appendChild(bbbMap.getCard("Average Risk Score", bbbMap.Number.format(risk)));
-    modalContent.appendChild(bbbMap.getCard("Minimum Risk Score", bbbMap.Number.format(riskMin)));
-    modalContent.appendChild(bbbMap.getCard("Maximum Risk Score", bbbMap.Number.format(riskMax)));
-
-    modalContent.appendChild(bbbMap.getCard("Total Estimated Loss", bbbMap.USDollar.format(loss)));
-    modalContent.appendChild(bbbMap.getCard("Average Loss Score", bbbMap.Number.format(lossScoreAvg)));
-
-    modalContent.appendChild(bbbMap.getCard("Average Risk Score", bbbMap.Number.format(risk)));
-    modalContent.appendChild(bbbMap.getCard("Minimum Risk Score", bbbMap.Number.format(riskMin)));
-    modalContent.appendChild(bbbMap.getCard("Maximum Risk Score", bbbMap.Number.format(riskMax)));
-
-    modalContent.appendChild(bbbMap.getCard("Average Social Vulnerability", bbbMap.Number.format(soviScoreAvg)));
-    modalContent.appendChild(bbbMap.getCard("Minimum Social Vulnerability", bbbMap.Number.format(soviScoreMin)));
-    modalContent.appendChild(bbbMap.getCard("Maximum Social Vulnerability", bbbMap.Number.format(soviScoreMax)));
-
-    modalContent.appendChild(bbbMap.getCard("Average Community Resiliance", bbbMap.Number.format(reslScoreAvg)));
-    modalContent.appendChild(bbbMap.getCard("Minimum Community Resiliance", bbbMap.Number.format(reslScoreMin)));
-    modalContent.appendChild(bbbMap.getCard("Maximum Community Resiliance", bbbMap.Number.format(reslScoreMax)));
-*/
-    const ealBlock = document.createElement("calcite-block");
-    ealBlock.heading = "Estimated Loss Summary";
-    ealBlock.open = true;
-    const ealTable = bbbMap.getTable();
-    ealTable.appendChild(bbbMap.addRow("Total Estimated Loss", bbbMap.USDollar.format(loss)));
-    ealTable.appendChild(bbbMap.addRow("Average Loss Score", bbbMap.Number.format(lossScoreAvg)));
-    ealTable.appendChild(bbbMap.addRow("Total Tracts", bbbMap.Number.format(tracts)));
-    ealTable.appendChild(bbbMap.addRow("Total Area (sq mi)", bbbMap.Number.format(area)));
-    ealBlock.appendChild(ealTable);
-
-    const riskBlock = document.createElement("calcite-block");
-    riskBlock.heading = "Risk Summary";
-    riskBlock.open = true;
-    const riskTable = bbbMap.getTable();
-    riskTable.appendChild(bbbMap.addRow("Average Risk Score", bbbMap.Number.format(risk)));
-    riskTable.appendChild(bbbMap.addRow("Minimum Risk Score", bbbMap.Number.format(riskMin)));
-    riskTable.appendChild(bbbMap.addRow("Maximum Risk Score", bbbMap.Number.format(riskMax)));
-    riskBlock.appendChild(riskTable);
-
-    const soviBlock = document.createElement("calcite-block");
-    soviBlock.heading = "Social Vulnerability Summary";
-    soviBlock.open = true;
-    const soviTable = bbbMap.getTable();
-    soviTable.appendChild(bbbMap.addRow("Average Social Vulnerability", bbbMap.Number.format(soviScoreAvg)));
-    soviTable.appendChild(bbbMap.addRow("Minimum Social Vulnerability", bbbMap.Number.format(soviScoreMin)));
-    soviTable.appendChild(bbbMap.addRow("Maximum Social Vulnerability", bbbMap.Number.format(soviScoreMax)));
-    soviBlock.appendChild(soviTable);
-
-    const reslBlock = document.createElement("calcite-block");
-    reslBlock.heading = "Community Resiliance Summary";
-    reslBlock.open = true;
-    const reslTable = bbbMap.getTable();
-    reslTable.appendChild(bbbMap.addRow("Average Community Resiliance", bbbMap.Number.format(reslScoreAvg)));
-    reslTable.appendChild(bbbMap.addRow("Minimum Community Resiliance", bbbMap.Number.format(reslScoreMin)));
-    reslTable.appendChild(bbbMap.addRow("Maximum Community Resiliance", bbbMap.Number.format(reslScoreMax)));
-    reslBlock.appendChild(reslTable);
-
-    modal.appendChild(ealBlock);
-    modal.appendChild(riskBlock);
-    modal.appendChild(soviBlock);
-    modal.appendChild(reslBlock);
-    //modal.appendChild(modalContent);
     document.querySelector("calcite-shell").appendChild(modal);
-    //
 };
 
 bbbMap.getCard = function (heading, msg) {
