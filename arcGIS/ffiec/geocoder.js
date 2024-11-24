@@ -358,7 +358,7 @@ bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart") {
                 }
             },
             onClick: (event, elements) => {
-                console.log('click'. event, elements, chartData, this);
+                console.log('click'. event, elements, data);
 
             }
         },
