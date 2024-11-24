@@ -33,7 +33,7 @@ bbbMap.initMap = () => {
             bbbMap.view = new MapView({
                 map: bbbMap.map,
                 //center: [-96.3537, 40.6698],
-                center: [-80.54993452144528, 25.26285858333048],
+                center: [-80.20523847652363, 25.780259479100824],
                 //zoom: 4,
                 zoom: 9,
                 highlightOptions: {
@@ -77,7 +77,7 @@ bbbMap.initMap = () => {
                     bbbMap.point = e.mapPoint;
                     bbbMap.view.openPopup({
                         title: "User Selection",
-                        content: `Clicked ${e.mapPoint.latitude}, ${e.mapPoint.longitude} refresh census demographics to analyze this point`,
+                        content: `Clicked ${e.mapPoint.longitude}, ${e.mapPoint.latitude} refresh census demographics to analyze this point`,
                         location: e.mapPoint,
                     });
                 }
@@ -320,9 +320,9 @@ bbbMap.buildSummaryReportContent = function (container) {
         container.appendChild(block);
     });
 };
-bbbMap.buildSummaryReportCharts = function (attr, title = "Chart") {
+bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart") {
     console.log("buildSummaryReportCharts");
-    let data = bbbMap?.tractShapeLayerSource?.source;
+   // let data = bbbMap?.tractShapeLayerSource?.source;
     const block = document.createElement("calcite-block");
     block.heading = title;
     block.open = true;
@@ -338,30 +338,14 @@ bbbMap.buildSummaryReportCharts = function (attr, title = "Chart") {
     container.appendChild(canvas);
     block.appendChild(container);
     console.log("canvas", container, canvas);
-    let chartData = data.map((d) => {
-        return { label: d.attributes.TRACTFIPS, risk: d.attributes.RISK_SCORE, sovi: d.attributes.SOVI_SCORE, eal: d.attributes.EAL_SCORE };
-    });
-
-    chartData.sort((a, b) => b.risk - a.risk);
+   
 
     //let labels = data.map((d) => d.attributes.TRACT);
     //let risk_score = data.map((d) => d.attributes.RISK_SCORE);
 
     new Chart(canvas, {
-        type: "line",
-        data: {
-            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
-            datasets: [
-                {
-                    label: "Risk",
-                    data: chartData.map((m) => m.risk), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-                },
-                {
-                    label: "Vulnerability",
-                    data: chartData.map((m) => m.sovi), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-                },
-            ],
-        },
+        type: type,
+        data: data,
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -408,9 +392,38 @@ bbbMap.getSummaryReport = function () {
     bbbMap.buildSummaryReportContent(modalContent);
     modal.appendChild(modalContent);
 
-    const riskChart = bbbMap.buildSummaryReportCharts("RISK_SCORE", "Risk Chart");
+    let chartData = data.map((d) => {
+        return { label: d.attributes.TRACTFIPS, x: d.attributes.RISK_SCORE, y: d.attributes.SOVI_SCORE, eal: d.attributes.EAL_SCORE };
+    });
+
+    chartData.sort((a, b) => b.x - a.x);
+    let meep = {
+        labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
+        datasets: [
+            {
+                label: "Risk",
+                data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+            },
+            {
+                label: "Vulnerability",
+                data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+            },
+        ],
+    };
+
+    const riskChart = bbbMap.buildSummaryReportCharts(meep, "line", "Risk Chart");
     modal.appendChild(riskChart);
 
+    let scatter = {
+        datasets: [
+            {
+                label: "Scatter Plot",
+                data: chartData
+            },
+        ],
+    };
+    const scatterChart = bbbMap.buildSummaryReportCharts(scatter, "scatter", "Scatter Chart");
+    modal.appendChild(scatterChart);
     //const ealChart = bbbMap.buildSummaryReportCharts("EAL_VALT", "Expected Annual Loss Chart");
     //modal.appendChild(ealChart);
 
@@ -1198,11 +1211,6 @@ bbbMap.climateCols = {
             type: "Number",
             category: "Resilience",
             reportName: "Community Resilience Score",
-            report: [
-                { title: "Avg Resilience Score", fxn: bbbMap.getAvg },
-                { title: "Min Resilience Score", fxn: bbbMap.getMin },
-                { title: "Max Resilience Score", fxn: bbbMap.getMax },
-            ],
         },
         { name: "RESL_SPCTL", alias: "State Percentile", type: "Number", category: "Resilience" },
     ],
@@ -1241,6 +1249,11 @@ bbbMap.climateCols = {
 };
 
 /*
+            report: [
+                { title: "Avg Resilience Score", fxn: bbbMap.getAvg },
+                { title: "Min Resilience Score", fxn: bbbMap.getMin },
+                { title: "Max Resilience Score", fxn: bbbMap.getMax },
+            ],
 bbbMap.climateCategories.map((c) => {
     let cols = temp1.filter((t) => t.name.includes(`${c.name}_`));
     let m = cols.map((t) => {
