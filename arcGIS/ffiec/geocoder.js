@@ -236,7 +236,7 @@ bbbMap.buildGroupByTables = function (data, config) {
     const sortedData = Object.entries(d).sort((a, b) => b[1] - a[1]);
 
     const block = bbbMap.getBlock(config.title);
-    const table = bbbMap.getTable();
+    const table = bbbMap.getTable(true, false);
 
     sortedData.forEach((d) => {
         table.appendChild(bbbMap.addRow(d[0], bbbMap[config.format].format(d[1])));
@@ -347,7 +347,7 @@ bbbMap.buildSummaryReportContent = function () {
 
         const block = bbbMap.getBlock(g?.reportName);
         //block.style = "width: 30%";
-        const table = bbbMap.getTable();
+        const table = bbbMap.getTable(true, false);
         table.layout = "fixed";
 
         g.report.forEach((e) => {
@@ -578,8 +578,8 @@ bbbMap.getSummaryReport = function () {
             return rtn;
         });
 
-        radarData = radarData.filter((d) => d.value > 0);
-        radarData.sort((a, b) => b.value - a.value);
+        //radarData = radarData.filter((d) => d.value > 0);
+        radarData.sort((a, b) => b.alias - a.alias);
         let radarConfig = {
             labels: radarData.map((m) => m.alias),
             datasets: [
@@ -1162,13 +1162,13 @@ bbbMap.addRow = function (l, v) {
 
     return row;
 };
-bbbMap.getTable = function () {
+bbbMap.getTable = function (bordered = true, striped = true, scale = "s") {
     const table = document.createElement("calcite-table");
-    table.bordered = true;
+    table.bordered = bordered;
     table.interactionMode = "static";
     table.layout = "auto";
-    table.striped = true;
-    table.scale = "s";
+    table.striped = striped;
+    table.scale = scale;
     return table;
 };
 
@@ -1280,9 +1280,9 @@ bbbMap.MAX_AREA = 500;
 bbbMap.focusArea = "RISK";
 
 bbbMap.climateDictionary = [
-    { name: "RISK", alias: "Composite Climate", type: "nri", suffix: "RATNG" },
-    { name: "EAL", alias: "Expected Annual Loss", type: "eal", suffix: "RATNG" },
-    { name: "SOVI", alias: "Social Vulnerability", type: "sovi", suffix: "RATNG" },
+    { name: "RISK", alias: "Climate National Risk Index (NRI)", type: "nri", suffix: "RATNG" },
+    { name: "EAL", alias: "Expected Annual Loss (EAL)", type: "eal", suffix: "RATNG" },
+    { name: "SOVI", alias: "Social Vulnerability Index (SOVI)", type: "sovi", suffix: "RATNG" },
     { name: "RESL", alias: "Community Resilience", type: "cr", suffix: "RATNG" },
     { name: "AVLN", alias: "Avalanche", type: "hazard", suffix: "RISKR" },
     { name: "CFLD", alias: "Coastal Flooding", type: "hazard", suffix: "RISKR" },
