@@ -283,7 +283,10 @@ bbbMap.getAvg = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
     let rtn = "";
     try {
         if (data) {
-            rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0) / data.length;
+            let d = data.map((f) => f.attributes[attr]);
+            d = d.filter((d) => !isNaN(d) && d > 0);
+            //rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0) / data.length;
+            rtn = d.reduce((sum, item) => sum + item, 0) / data.length;
         }
     } catch (e) {
         console.log("Error getting Avg", e, attr);
@@ -405,7 +408,7 @@ bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart", xLabel 
 
     const container = document.createElement("div");
     container.style.width = "100%";
-    container.style.height = "400px";
+    container.style.height = type === "line" ? "350px" : "100%";
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -417,25 +420,20 @@ bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart", xLabel 
 
     //let labels = data.map((d) => d.attributes.TRACT);
     //let risk_score = data.map((d) => d.attributes.RISK_SCORE);
+    let scales =
+        type === "radar"
+            ? { r: { pointLabels: { color: "white", font: { size: 9 } }, ticks: { color: "red", display: false }, grid: { color: "rgba(255, 255, 255, 0.3)" }, angleLines: { color: "rgba(255, 255, 255, 0.3)" } } }
+            : {
+                  x: { title: { display: true, text: xLabel } },
+                  y: { title: { display: true, text: yLabel } },
+                  //r: { pointLabels: { font: { size: 9 } }, ticks: {color: "red", display: false } },
+              };
 
     const chart = new Chart(ctx, {
         type: type,
         data: data,
         options: {
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: xLabel,
-                    },
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: yLabel,
-                    },
-                },
-            },
+            scales: scales,
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -448,45 +446,29 @@ bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart", xLabel 
             },
             onClick: async (event, elements) => {
                 console.log("click".event, elements, data, this);
-                //console.log('tract', data.labels[elements[0].index]);
-                /*
-                const points = chart.getElementsAtEventForModel(
-                    event,
-                    'nearest',
-                    {intersect: true},
-                    true
-                );
-*/
+                if (type !== "radar") {
+                    if (elements && elements.length > 0) {
+                        const point = elements[0];
+                        const label = data.labels[point.index];
+                        const value = data.datasets[point.datasetIndex].data[point.index];
 
-                if (elements && elements.length > 0) {
-                    const point = elements[0];
-                    const label = data.labels[point.index];
-                    const value = data.datasets[point.datasetIndex].data[point.index];
+                        console.log("click", point, label, value);
 
-                    console.log("click", point, label, value);
+                        let results = await bbbMap.getTractGeom(label);
 
-                    let results = await bbbMap.getTractGeom(label);
-                    //const highlight = bbbMap.tractShapeLayerView.highlight(results.features);
+                        let geoid = label;
+                        let q = { where: `TRACTFIPS = '${geoid}'` };
 
-                    //bbbMap.view.openPopup({
-                    //features: results.features,
-                    //});
-                    let geoid = label;
-                    let q = { where: `TRACTFIPS = '${geoid}'` };
+                        bbbMap.tractShapeLayerView.featureEffect = {
+                            filter: q,
+                            excludedEffect: "grayscale(50%) opacity(33%)",
+                            includedEffect: " opacity(90%)", //bloom(1.5, 0.5px, 0.1)
+                        };
+                        bbbMap.sketchLayer.removeAll();
 
-                    bbbMap.tractShapeLayerView.featureEffect = {
-                        filter: q,
-                        excludedEffect: "grayscale(50%) opacity(33%)",
-                        includedEffect: " opacity(90%)", //bloom(1.5, 0.5px, 0.1)
-                    };
-                    bbbMap.sketchLayer.removeAll();
-
-                    bbbMap.summaryReportModal.open = false;
-                    bbbMap.view.goTo(results.features[0].geometry.extent.expand(1.5), bbbMap.goToOptions);
-
-                    //setTimeout(() => {
-                    //bbbMap.tractShapeLayerView.featureEffect = "";
-                    // }, 1000);
+                        bbbMap.summaryReportModal.open = false;
+                        bbbMap.view.goTo(results.features[0].geometry.extent.expand(1.5), bbbMap.goToOptions);
+                    }
                 }
             },
         },
@@ -494,9 +476,13 @@ bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart", xLabel 
     //}, 100);
     return block;
 };
+
+bbbMap.chartClick = async function (event, elements) {};
+
 bbbMap.summaryReportReset = function () {
     bbbMap.tractShapeLayerView.featureEffect = "";
 };
+
 bbbMap.getSummaryReport = function () {
     console.log("getSummaryReport");
     if (bbbMap.summaryReportModal) {
@@ -550,6 +536,26 @@ bbbMap.getSummaryReport = function () {
         const riskChart = bbbMap.buildSummaryReportCharts(meep, "line", "Risk Chart", "Tract GEOID", "Score");
         bbbMap.summaryReportModal.appendChild(riskChart);
 
+        chartData.sort((a, b) => b.y - a.y);
+        let soviConfig = {
+            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
+            datasets: [
+                {
+                    label: "Social Vulnerability",
+                    data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                    borderColor: "#aadd67", // Color of the line
+                },
+                {
+                    label: "Risk Index Score",
+                    data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                    borderColor: "#ff8a8e", // Color of the line
+                },
+            ],
+        };
+
+        const soviChart = bbbMap.buildSummaryReportCharts(soviConfig, "line", "Social Vulnerability Chart", "Tract GEOID", "Score");
+        bbbMap.summaryReportModal.appendChild(soviChart);
+
         let scatter = {
             labels: chartData.map((m) => m.label),
             datasets: [
@@ -564,6 +570,27 @@ bbbMap.getSummaryReport = function () {
         };
         const scatterChart = bbbMap.buildSummaryReportCharts(scatter, "scatter", "Scatter Chart", "Risk Score", "Social Vulerability Score");
         bbbMap.summaryReportModal.appendChild(scatterChart);
+
+        let h = bbbMap.climateDictionary.filter((d) => d.type === "hazard");
+        let radarData = h.map((h) => {
+            let rtn = { name: `${h.name}_RISKS`, alias: h.alias };
+            rtn.value = bbbMap.getAvg(rtn.name);
+            return rtn;
+        });
+
+        radarData = radarData.filter((d) => d.value > 0);
+        radarData.sort((a, b) => b.value - a.value);
+        let radarConfig = {
+            labels: radarData.map((m) => m.alias),
+            datasets: [
+                {
+                    label: "Scatter Plot",
+                    data: radarData.map((m) => m.value),
+                },
+            ],
+        };
+        const radarChart = bbbMap.buildSummaryReportCharts(radarConfig, "radar", "Hazard Risk Averages (Only non-zero)");
+        bbbMap.summaryReportModal.appendChild(radarChart);
         //const ealChart = bbbMap.buildSummaryReportCharts("EAL_VALT", "Expected Annual Loss Chart");
         //modal.appendChild(ealChart);
 
