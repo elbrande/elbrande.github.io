@@ -10,7 +10,7 @@ bbbMap.init = () => {
 };
 
 bbbMap.initMap = () => {
-    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color", "esri/PopupTemplate"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator, PopupTemplate) =>
+    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color", "esri/PopupTemplate", "esri/geometry/operators/labelPointOperator"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator, PopupTemplate, labelPointOperator) =>
         (async () => {
             esriConfig.apiKey = bbbMap.apiKey;
 
@@ -25,6 +25,7 @@ bbbMap.initMap = () => {
             bbbMap.esri.Sketch = Sketch;
             bbbMap.esri.colorRendererCreator = colorRendererCreator;
             bbbMap.esri.PopupTemplate = PopupTemplate;
+            bbbMap.esri.labelPointOperator = labelPointOperator;
 
             console.log("Building Map");
 
@@ -222,9 +223,51 @@ bbbMap.finishSketch = function (graphic, tool) {
         }
     }
 };
+bbbMap.getBlock = function (title, collapsible = true, open = true) {
+    const block = document.createElement("calcite-block");
+    block.heading = title;
+    block.open = open;
+    block.collapsible = collapsible;
+    return block;
+};
+bbbMap.buildGroupByTables = function (data, config) {
+    console.log("buildGroupByTables", data, config);
+    const d = bbbMap.getSumByGroup(config.groupBy, data, config.sumAttr);
+    const sortedData = Object.entries(d).sort((a, b) => b[1] - a[1]);
 
-bbbMap.getSum = function (attr) {
-    let data = bbbMap?.tractShapeLayerSource?.source;
+    const block = bbbMap.getBlock(config.title);
+    const table = bbbMap.getTable();
+
+    sortedData.forEach((d) => {
+        table.appendChild(bbbMap.addRow(d[0], bbbMap[config.format].format(d[1])));
+    });
+    block.appendChild(table);
+    return block;
+};
+bbbMap.getSumByGroup = function (groupBy, data = bbbMap?.tractShapeLayerSource?.source, sumAttr = "") {
+    console.log("xxxgetSumByGroup", groupBy, data, sumAttr);
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((acc, item) => {
+                if (!acc[item.attributes[groupBy]]) {
+                    acc[item.attributes[groupBy]] = 0;
+                }
+
+                if (sumAttr) {
+                    acc[item.attributes[groupBy]] += item.attributes[sumAttr];
+                } else {
+                    acc[item.attributes[groupBy]] += 1;
+                }
+                return acc;
+            });
+        }
+    } catch (e) {
+        console.log("Error getting getSumByGroup", e, groupBy, data, sumAttr);
+    }
+    return rtn;
+};
+bbbMap.getSum = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
     let rtn = "";
     try {
         if (data) {
@@ -236,8 +279,7 @@ bbbMap.getSum = function (attr) {
     return rtn;
 };
 
-bbbMap.getAvg = function (attr) {
-    let data = bbbMap?.tractShapeLayerSource?.source;
+bbbMap.getAvg = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
     let rtn = "";
     try {
         if (data) {
@@ -249,8 +291,7 @@ bbbMap.getAvg = function (attr) {
     return rtn;
 };
 
-bbbMap.getMin = function (attr) {
-    let data = bbbMap?.tractShapeLayerSource?.source;
+bbbMap.getMin = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
     let rtn = "";
     try {
         if (data) {
@@ -262,8 +303,7 @@ bbbMap.getMin = function (attr) {
     return rtn;
 };
 
-bbbMap.getMax = function (attr) {
-    let data = bbbMap?.tractShapeLayerSource?.source;
+bbbMap.getMax = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
     let rtn = "";
     try {
         if (data) {
@@ -281,6 +321,7 @@ bbbMap.applyFxn = function (fxn, attr) {
 
 bbbMap.buildSummaryReportContent = function () {
     //build report struture
+    const climateBlock = bbbMap.getBlock("Climate");
     const container = document.createElement("div");
     container.classList.add("searchCardContainer");
 
@@ -300,11 +341,8 @@ bbbMap.buildSummaryReportContent = function () {
     console.log("summaryReport", summaryReport);
     summaryReport.forEach((g, i) => {
         console.log("Report group", g);
-        const block = document.createElement("calcite-block");
-        block.heading = g?.reportName;
-        let open = i === 0 ? true : false;
-        block.open = true;
-        block.collapsible = true;
+
+        const block = bbbMap.getBlock(g?.reportName);
         //block.style = "width: 30%";
         const table = bbbMap.getTable();
         table.layout = "fixed";
@@ -320,7 +358,23 @@ bbbMap.buildSummaryReportContent = function () {
         container.appendChild(block);
     });
 
-    return container;
+    climateBlock.appendChild(container);
+
+    const groupByContainer = document.createElement("div");
+    groupByContainer.classList.add("searchCardContainer");
+
+    const groupByConfig = [
+        { title: "Risk Rating", groupBy: "RISK_RATNG", sumAttr: "", format: "Number" },
+        { title: "Social Vulnerability Rating", groupBy: "SOVI_RATNG", sumAttr: "", format: "Number" },
+        { title: "Community Resiliance Rating", groupBy: "RESL_RATNG", sumAttr: "", format: "Number" },
+    ];
+    groupByConfig.forEach((b) => {
+        const block = bbbMap.buildGroupByTables(bbbMap.tractShapeLayerSource.source, b);
+        groupByContainer.appendChild(block);
+    });
+    climateBlock.appendChild(groupByContainer);
+
+    return climateBlock;
 };
 
 bbbMap.getTractGeom = async function (geoid) {
@@ -469,6 +523,7 @@ bbbMap.getSummaryReport = function () {
         bbbMap.summaryReportModal.appendChild(headerDiv);
 
         const content = bbbMap.buildSummaryReportContent();
+        console.log("xxx", content);
         bbbMap.summaryReportModal.appendChild(content);
 
         let chartData = data.map((d) => {
@@ -482,10 +537,12 @@ bbbMap.getSummaryReport = function () {
                 {
                     label: "Risk Index Score",
                     data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                    borderColor: "#ff8a8e", // Color of the line
                 },
                 {
                     label: "Social Vulnerability",
                     data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                    borderColor: "#aadd67", // Color of the line
                 },
             ],
         };
@@ -499,6 +556,9 @@ bbbMap.getSummaryReport = function () {
                 {
                     label: "Scatter Plot",
                     data: chartData,
+                    borderColor: "rgba(255, 138, 142, 0.9)",
+                    pointRadius: 4,
+                    backgroundColor: "rgba(255, 138, 142, 0.6)",
                 },
             ],
         };
@@ -538,8 +598,10 @@ bbbMap.refreshTractInfo = function (feature) {
     console.log("refreshTractInfo", feature);
     let p;
     if (feature && feature.geometry) {
-        if (feature.geometry.centroid) {
-            p = { latitude: feature.geometry.centroid.latitude, longitude: feature.geometry.centroid.longitude, type: "point" };
+        if (feature.geometry.type === "polygon") {
+            const labelPoint = bbbMap.esri.labelPointOperator.execute(feature.geometry);
+            // p = { latitude: feature.geometry.centroid.latitude, longitude: feature.geometry.centroid.longitude, type: "point" };
+            p = { latitude: labelPoint.latitude, longitude: labelPoint.longitude, type: "point" };
         } else {
             p = { latitude: feature.geometry.latitude, longitude: feature.geometry.longitude, type: "point" };
         }
