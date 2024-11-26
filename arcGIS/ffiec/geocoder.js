@@ -180,30 +180,26 @@ bbbMap.initMap = () => {
         })()); //end require
 };
 
-bbbMap.showAlertxx = function (type, title, msg) {
-    console.log("showAlert", type, title, msg);
-    const alert = document.getElementById(`${type}Alert`);
-    const t = document.getElementById(`${type}Title`);
-    const m = document.getElementById(`${type}Msg`);
-    if (alert) {
-        t.innerHTML = title;
-        m.innerHTML = msg;
-
-        alert.open = true;
-    }
-};
-
 bbbMap.showAlert = function (type, title, msg, node) {
     console.log("showAlert", type, title, msg);
     const alert = document.getElementById(`alert`);
     const t = document.getElementById(`alertTitle`);
     const m = document.getElementById(`alertMsg`);
+    let btn = document.getElementById("summaryReportBtn");
+    let resetBtn = document.getElementById("summaryReportResetBtn");
+
+    if (btn) {
+        alert.removeChild(btn);
+    }
+    if (resetBtn) {
+        alert.removeChild(resetBtn);
+    }
 
     if (alert) {
         t.innerHTML = title;
         m.innerHTML = msg;
         if (node) {
-            alert.appendChild(node);
+            node.forEach((n) => alert.appendChild(n));
         }
         alert.kind = type;
         alert.open = true;
@@ -282,8 +278,11 @@ bbbMap.applyFxn = function (fxn, attr) {
     return fxn(attr);
 };
 
-bbbMap.buildSummaryReportContent = function (container) {
+bbbMap.buildSummaryReportContent = function () {
     //build report struture
+    const container = document.createElement("div");
+    container.classList.add("searchCardContainer");
+
     let summaryReport = [];
     ["eal", "nri", "sovi", "cr"].forEach((g) => {
         console.log("group", g);
@@ -319,10 +318,31 @@ bbbMap.buildSummaryReportContent = function (container) {
         block.appendChild(table);
         container.appendChild(block);
     });
+
+    return container;
 };
-bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart") {
+
+bbbMap.getTractGeom = async function (geoid) {
+    const q = {
+        where: `TRACTFIPS = '${geoid}'`,
+        outFields: ["*"],
+        returnGeometry: true,
+        returnCentroid: true,
+    };
+
+    console.log("getTractGeom Query", q);
+    const results = await bbbMap.tractShapeLayerView.queryFeatures(q);
+    //const results = await bbbMap.tractLayerView.queryFeatures(q);
+
+    console.log("getTractGeom results", results);
+    return results;
+    //if (results.features.length > 0) {
+    //return results.features[0];
+    //}
+};
+bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart", xLabel = "", yLabel = "") {
     console.log("buildSummaryReportCharts");
-   // let data = bbbMap?.tractShapeLayerSource?.source;
+    // let data = bbbMap?.tractShapeLayerSource?.source;
     const block = document.createElement("calcite-block");
     block.heading = title;
     block.open = true;
@@ -330,104 +350,164 @@ bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart") {
 
     const container = document.createElement("div");
     container.style.width = "100%";
-    container.style.height = "300px";
+    container.style.height = "400px";
 
     const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     //canvas.width = "300";
     //canvas.height = "200";
     container.appendChild(canvas);
     block.appendChild(container);
     console.log("canvas", container, canvas);
-   
 
     //let labels = data.map((d) => d.attributes.TRACT);
     //let risk_score = data.map((d) => d.attributes.RISK_SCORE);
 
-    new Chart(canvas, {
+    const chart = new Chart(ctx, {
         type: type,
         data: data,
         options: {
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: xLabel,
+                    },
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: yLabel,
+                    },
+                },
+            },
             responsive: true,
             maintainAspectRatio: false,
-            plugins :{
+            plugins: {
                 tooltip: {
-                    enabled: true
+                    enabled: true,
                 },
                 legend: {
-                    display: true
+                    display: true,
+                },
+            },
+            onClick: async (event, elements) => {
+                console.log("click".event, elements, data, this);
+                //console.log('tract', data.labels[elements[0].index]);
+                /*
+                const points = chart.getElementsAtEventForModel(
+                    event,
+                    'nearest',
+                    {intersect: true},
+                    true
+                );
+*/
+
+                if (elements && elements.length > 0) {
+                    const point = elements[0];
+                    const label = data.labels[point.index];
+                    const value = data.datasets[point.datasetIndex].data[point.index];
+
+                    console.log("click", point, label, value);
+
+                    let results = await bbbMap.getTractGeom(label);
+                    //const highlight = bbbMap.tractShapeLayerView.highlight(results.features);
+
+                    //bbbMap.view.openPopup({
+                    //features: results.features,
+                    //});
+                    let geoid = label;
+                    let q = { where: `TRACTFIPS = '${geoid}'` };
+
+                    bbbMap.tractShapeLayerView.featureEffect = {
+                        filter: q,
+                        excludedEffect: "grayscale(50%) opacity(33%)",
+                        includedEffect: " opacity(90%)", //bloom(1.5, 0.5px, 0.1)
+                    };
+                    bbbMap.sketchLayer.removeAll();
+
+                    bbbMap.summaryReportModal.open = false;
+                    bbbMap.view.goTo(results.features[0].geometry.extent.expand(1.5), bbbMap.goToOptions);
+
+                    //setTimeout(() => {
+                    //bbbMap.tractShapeLayerView.featureEffect = "";
+                    // }, 1000);
                 }
             },
-            onClick: (event, elements) => {
-                console.log('click'. event, elements, data);
-
-            }
         },
     });
     //}, 100);
     return block;
 };
-
+bbbMap.summaryReportReset = function () {
+    bbbMap.tractShapeLayerView.featureEffect = "";
+};
 bbbMap.getSummaryReport = function () {
     console.log("getSummaryReport");
-    const modal = document.createElement("calcite-dialog");
-    const modalContent = document.createElement("div");
-    modal.modal = true;
-    modal.open = true;
-    modal.heading = "Area Summary Report";
-    modal.slot = "dialogs";
-    modalContent.classList.add("searchCardContainer");
-    //modal.scale = "l";
-    modal.widthScale = "l";
+    if (bbbMap.summaryReportModal) {
+        bbbMap.summaryReportModal.open = true;
+    } else {
+        bbbMap.summaryReportModal = document.createElement("calcite-dialog");
 
-    //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
-    let data = bbbMap.tractShapeLayerSource.source;
-    let tracts = data.length;
-    let area = bbbMap.getSum("AREA");
-    let counties = [...new Set(data.map((i) => `${i.attributes.COUNTY}, ${i.attributes.STATE}`))];
-    let countyTxt = counties.join(", ");
-    const headerDiv = document.createElement("div");
-    headerDiv.innerHTML = `<h3>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<BR>Area ${bbbMap.Number.format(area)} square miles</h3>`;
-    modal.appendChild(headerDiv);
+        bbbMap.summaryReportModal.modal = true;
+        bbbMap.summaryReportModal.open = true;
+        bbbMap.summaryReportModal.heading = "Area Summary Report";
+        bbbMap.summaryReportModal.slot = "dialogs";
 
-    bbbMap.buildSummaryReportContent(modalContent);
-    modal.appendChild(modalContent);
+        //modal.scale = "l";
+        bbbMap.summaryReportModal.widthScale = "l";
 
-    let chartData = data.map((d) => {
-        return { label: d.attributes.TRACTFIPS, x: d.attributes.RISK_SCORE, y: d.attributes.SOVI_SCORE, eal: d.attributes.EAL_SCORE };
-    });
+        //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
+        let data = bbbMap.tractShapeLayerSource.source;
+        let tracts = data.length;
+        let area = bbbMap.getSum("AREA");
+        let counties = [...new Set(data.map((i) => `${i.attributes.COUNTY}, ${i.attributes.STATE}`))];
+        let countyTxt = counties.join("; ");
+        const headerDiv = document.createElement("div");
+        headerDiv.innerHTML = `<h3>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<BR>Area ${bbbMap.Number.format(area)} square miles</h3>`;
+        bbbMap.summaryReportModal.appendChild(headerDiv);
 
-    chartData.sort((a, b) => b.x - a.x);
-    let meep = {
-        labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
-        datasets: [
-            {
-                label: "Risk",
-                data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-            },
-            {
-                label: "Vulnerability",
-                data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-            },
-        ],
-    };
+        const content = bbbMap.buildSummaryReportContent();
+        bbbMap.summaryReportModal.appendChild(content);
 
-    const riskChart = bbbMap.buildSummaryReportCharts(meep, "line", "Risk Chart");
-    modal.appendChild(riskChart);
+        let chartData = data.map((d) => {
+            return { label: d.attributes.TRACTFIPS, x: d.attributes.RISK_SCORE, y: d.attributes.SOVI_SCORE, eal: d.attributes.EAL_SCORE };
+        });
 
-    let scatter = {
-        datasets: [
-            {
-                label: "Scatter Plot",
-                data: chartData
-            },
-        ],
-    };
-    const scatterChart = bbbMap.buildSummaryReportCharts(scatter, "scatter", "Scatter Chart");
-    modal.appendChild(scatterChart);
-    //const ealChart = bbbMap.buildSummaryReportCharts("EAL_VALT", "Expected Annual Loss Chart");
-    //modal.appendChild(ealChart);
+        chartData.sort((a, b) => b.x - a.x);
+        let meep = {
+            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
+            datasets: [
+                {
+                    label: "Risk Index Score",
+                    data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                },
+                {
+                    label: "Social Vulnerability",
+                    data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                },
+            ],
+        };
 
-    document.querySelector("calcite-shell").appendChild(modal);
+        const riskChart = bbbMap.buildSummaryReportCharts(meep, "line", "Risk Chart", "Tract GEOID", "Score");
+        bbbMap.summaryReportModal.appendChild(riskChart);
+
+        let scatter = {
+            labels: chartData.map((m) => m.label),
+            datasets: [
+                {
+                    label: "Scatter Plot",
+                    data: chartData,
+                },
+            ],
+        };
+        const scatterChart = bbbMap.buildSummaryReportCharts(scatter, "scatter", "Scatter Chart", "Risk Score", "Social Vulerability Score");
+        bbbMap.summaryReportModal.appendChild(scatterChart);
+        //const ealChart = bbbMap.buildSummaryReportCharts("EAL_VALT", "Expected Annual Loss Chart");
+        //modal.appendChild(ealChart);
+
+        document.querySelector("calcite-shell").appendChild(bbbMap.summaryReportModal);
+    }
 };
 
 bbbMap.getCard = function (heading, msg) {
@@ -471,6 +551,7 @@ bbbMap.refreshTractInfo = function (feature) {
 bbbMap.getNearbyTracts = async function (feature, tool) {
     console.log("getNearbyTracts", feature, tool);
     let point, geom;
+    bbbMap.summaryReportModal = "";
     try {
         if (bbbMap?.tractShapeLayer) {
             bbbMap?.tractShapeLayer.destroy();
@@ -553,7 +634,9 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
         bbbMap.tractShapeLayer.renderer = response.renderer;
 
         */
-        bbbMap.tractShapeLayerView = await bbbMap.map.add(bbbMap.tractShapeLayer);
+        //        bbbMap.tractShapeLayerView = await bbbMap.map.add(bbbMap.tractShapeLayer);
+        bbbMap.map.add(bbbMap.tractShapeLayer);
+        bbbMap.tractShapeLayerView = await bbbMap.view.whenLayerView(bbbMap.tractShapeLayer);
 
         bbbMap.tractShapeLayer.queryExtent().then((response) => {
             bbbMap.view.goTo(response.extent.expand(1.2), bbbMap.goToOptions);
@@ -567,29 +650,41 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
             bbbMap.view.popup.close();
         }
 
-        //if (!tool) {
-        const area = bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles");
         //<calcite-action id="action-with-tooltip" text="Layers" icon="layers" text-enabled></calcite-action>
-        let btn = "";
-        if (!document.getElementById("summaryReportBtn")) {
-            btn = document.createElement("calcite-button");
-            //const btn = document.createElement("calcite-action");
+        //let btn = "";
+        // if (!document.getElementById("summaryReportBtn")) {
+        const btn = document.createElement("calcite-button");
+        btn.innerHTML = "Summary Report";
+        btn.slot = "actions-end";
+        btn.iconStart = "file-report";
+        btn.round = false;
+        btn.id = "summaryReportBtn";
 
-            btn.innerHTML = "Summary Report";
-            //btn.text = "Generate Summary Report";
-            btn.slot = "actions-end";
-            btn.iconStart = "file-report";
-            btn.round = false;
-            btn.id = "summaryReportBtn";
+        //btn.scale = "m";
+        //btn.textEnabled = true;
+        btn.addEventListener("click", (e) => {
+            console.log("Report Button Click", e);
+            bbbMap.getSummaryReport();
+        });
 
-            btn.scale = "l";
-            //btn.textEnabled = true;
-            btn.addEventListener("click", (e) => {
-                console.log("Report Button Click", e);
-                bbbMap.getSummaryReport();
-            });
+        const resetBtn = document.createElement("calcite-button");
+        resetBtn.innerHTML = "";
+        resetBtn.slot = "actions-end";
+        resetBtn.iconStart = "reset";
+        resetBtn.round = false;
+        resetBtn.id = "summaryReportResetBtn";
+        resetBtn.addEventListener("click", (e) => {
+            console.log("Reset", e);
+            bbbMap.summaryReportReset();
+        });
+
+        const area = bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles");
+        let radius = "";
+        if (!tool) {
+            radius = ` (radius of ${bbbMap.BUFFER_SIZE} miles)`;
         }
-        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within a ${bbbMap.BUFFER_SIZE} mile radius (${bbbMap.Number.format(area)} square miles).<br>`, btn);
+        //const area = bbbMap.esri.geometryEngine.geodesicArea(geom, 'square-miles');
+        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within ${bbbMap.Number.format(area)} square miles${radius}.`, [btn, resetBtn]);
         //}
     } catch (e) {
         bbbMap.showAlert("danger", `Error Getting Tracts`, `${e.message}`);
