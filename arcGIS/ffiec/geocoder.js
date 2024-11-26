@@ -1280,7 +1280,7 @@ bbbMap.MAX_AREA = 500;
 bbbMap.focusArea = "RISK";
 
 bbbMap.climateDictionary = [
-    { name: "RISK", alias: "Climate National Risk Index (NRI)", type: "nri", suffix: "RATNG" },
+    { name: "RISK", alias: "National Risk Index (NRI)", type: "nri", suffix: "RATNG" },
     { name: "EAL", alias: "Expected Annual Loss (EAL)", type: "eal", suffix: "RATNG" },
     { name: "SOVI", alias: "Social Vulnerability Index (SOVI)", type: "sovi", suffix: "RATNG" },
     { name: "RESL", alias: "Community Resilience", type: "cr", suffix: "RATNG" },
