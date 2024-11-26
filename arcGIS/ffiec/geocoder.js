@@ -260,7 +260,7 @@ bbbMap.getSumByGroup = function (groupBy, data = bbbMap?.tractShapeLayerSource?.
                     acc[item.attributes[groupBy]] += 1;
                 }
                 return acc;
-            });
+            }, {});
         }
     } catch (e) {
         console.log("Error getting getSumByGroup", e, groupBy, data, sumAttr);
@@ -526,7 +526,7 @@ bbbMap.getSummaryReport = function () {
                     borderColor: "#ff8a8e", // Color of the line
                 },
                 {
-                    label: "Social Vulnerability",
+                    label: "Social Vulnerability Index (SVI)",
                     data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
                     borderColor: "#aadd67", // Color of the line
                 },
@@ -1281,8 +1281,8 @@ bbbMap.focusArea = "RISK";
 
 bbbMap.climateDictionary = [
     { name: "RISK", alias: "National Risk Index (NRI)", type: "nri", suffix: "RATNG" },
+    { name: "SOVI", alias: "Social Vulnerability Index (SVI)", type: "sovi", suffix: "RATNG" },
     { name: "EAL", alias: "Expected Annual Loss (EAL)", type: "eal", suffix: "RATNG" },
-    { name: "SOVI", alias: "Social Vulnerability Index (SOVI)", type: "sovi", suffix: "RATNG" },
     { name: "RESL", alias: "Community Resilience", type: "cr", suffix: "RATNG" },
     { name: "AVLN", alias: "Avalanche", type: "hazard", suffix: "RISKR" },
     { name: "CFLD", alias: "Coastal Flooding", type: "hazard", suffix: "RISKR" },
@@ -1374,20 +1374,20 @@ bbbMap.climateCols = {
         { name: "ALR_VRA_NPCTL", alias: "Social Vulnerability and Community Resilience Rate", type: "Number", category: "EAL" },
     ],
     sovi: [
-        { name: "SOVI_RATNG", alias: "Rating", type: "string", category: "SOVI" },
+        { name: "SOVI_RATNG", alias: "Rating", type: "string", category: "SVI" },
         {
             name: "SOVI_SCORE",
             alias: "Score",
             type: "Number",
-            category: "SOVI",
+            category: "SVI",
             reportName: "Social Vulnerability",
             report: [
-                { title: "Avg SOVI Score", fxn: bbbMap.getAvg },
-                { title: "Min SOVI Score", fxn: bbbMap.getMin },
-                { title: "Max SOVI Score", fxn: bbbMap.getMax },
+                { title: "Avg SVI Score", fxn: bbbMap.getAvg },
+                { title: "Min SVI Score", fxn: bbbMap.getMin },
+                { title: "Max SVI Score", fxn: bbbMap.getMax },
             ],
         },
-        { name: "SOVI_SPCTL", alias: "State Percentile", type: "Number", category: "SOVI" },
+        { name: "SOVI_SPCTL", alias: "State Percentile", type: "Number", category: "SVI" },
     ],
     cr: [
         { name: "RESL_RATNG", alias: "Rating", type: "string", category: "Resilience" },
