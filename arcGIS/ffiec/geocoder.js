@@ -123,6 +123,7 @@ bbbMap.initMap = () => {
                 () => bbbMap.view.popup.selectedFeature,
                 (feature) => {
                     console.log("Popup feature change", feature);
+                    //bbbMap.updatePopupTemplate(feature);
 
                     //bbbMap.view.popup.actions = [];
 
@@ -331,7 +332,7 @@ bbbMap.getTractGeom = async function (geoid) {
     };
 
     console.log("getTractGeom Query", q);
-    const results = await bbbMap.tractShapeLayerView.queryFeatures(q);
+    const results = await bbbMap.tractShapeLayer.queryFeatures(q);
     //const results = await bbbMap.tractLayerView.queryFeatures(q);
 
     console.log("getTractGeom results", results);
@@ -759,7 +760,8 @@ bbbMap.ui = function () {
         let layer = bbbMap.map.findLayerById("tractShapes");
         if (layer && renderer) {
             layer.renderer = renderer;
-            layer.popupTemplate = bbbMap.updatePopupTemplate();
+            //layer.popupTemplate = bbbMap.updatePopupTemplate();
+            bbbMap.view.openPopup(bbbMap.updatePopupTemplate());
         }
     });
 
@@ -781,7 +783,7 @@ bbbMap.updatePopupTemplate = function (feature = bbbMap.feature) {
         let a = bbbMap.getDictionary();
         console.log("updatePopupTemplate", a, feature);
         const template = {
-            title: `${a.alias} for Tract: {TRACT}`,
+            title: `${a.alias} for Tract: ${feature.graphic.attributes.TRACT}`,
             content: bbbMap.getPopupContent(feature),
         };
         return template;
