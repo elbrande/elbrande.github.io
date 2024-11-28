@@ -1,48 +1,64 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
     <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
         <title>3B Menu</title>
+        <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+        <link id="theme-dark" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" />
+
+        <style>
+            .grid {
+                margin: 0.75rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                grid-gap: 1rem;
+                justify-content: space-evenly;
+            }
+        </style>
     </head>
 
-    <body>
-        <h3>Menu</h3>
+    <body class="calcite-mode-dark">
+        <calcite-shell content-behind>
+            <calcite-navigation slot="header" id="bbbNavigation">
+                <calcite-navigation-logo slot="logo" id="logo" heading="3B"></calcite-navigation-logo>
 
-        <div id="kmeans">
-            <p>
-                <a href="arcGIS/map5.html">arcGIS Map</a>
-                <br />
-                <a href="arcGIS/branch-analysis/map.html">Branch Analysis</a>
-                <br />
-                <a href="arcGIS/climate/climate.html">3B Climate</a>
-                <br />
-                <a href="arcGIS/census-geocoder/census.html">Census Geocoder</a>
-                <br />
-                <a href="arcGIS/census-geocoder/sample.html">Census Geocoder Sample</a>
-            </p>
-        </div>
+                <calcite-menu id="navigationMenu" slot="content-start">
+                    <calcite-menu-item text="Menu" id="appName" label="app" icon-start=""></calcite-menu-item>
+                </calcite-menu>
+            </calcite-navigation>
+            <calcite-block heading="ArcGIS JavaScript API" open>
+                <div id="menu" class="grid">
+                    <calcite-card>
+                        <img slot="thumbnail" alt="Climate Screenshot" src="img/climate.png" />
+                        <span slot="heading">Climate</span>
+                        <span slot="description">Visualize Climate Risk and Social Vulnerability in a given area. Includes summary reports and visualizations to better understand total climate impact. Also integrates with the FFIEC geocoder to get additional demographics for a tract.</span>
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="arcGIS/climate/climate.html" icon-start="rain"> 3B Climate Analysis </calcite-button>
+                        </div>
+                    </calcite-card>
 
-        <div id="google">
-            <p>
-                <a href="googleMaps/kmeans.html">KMeans Map</a>
-            </p>
+                    <calcite-card>
+                        <span slot="heading">Weather</span>
+                        <img slot="thumbnail" alt="Weather Screenshot" src="img/weather.png" />
+                        <span slot="description">Explore current weather. Add your own layer and dynamically style feature. You can also filter features based on weather shapes.</span>
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="arcGIS/weather/weather.html" icon-start="annotate-tool"> 3B Weather Analysis</calcite-button>
+                        </div>
+                    </calcite-card>
 
-            <p>
-                <a href="googleMaps/stateMap.html">State Map</a>
-            </p>
-        </div>
-
-        <div id="mapBox">
-            <p>
-                <a href="mapBox/map.html">mapBox Kmeans Map</a>
-            </p>
-        </div>
-        <h3>Samnples</h3>
-        <div id="samples">
-            <p>
-                <a href="arcgis/samples/censusAPI.html">Census API</a><br />
-                <a href="arcgis/samples/print.html">Print</a>
-            </p>
-        </div>
+                    <calcite-card>
+                        <span slot="heading">Branches</span>
+                        <img slot="thumbnail" alt="Branches Screenshot" src="img/branches.png" />
+                        <span slot="description">Find all branch locations for a bank. Explore surrounding census tracts and find nearby branches from other banks.</span>
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="arcGIS/branch-analysis/map.html" icon-start="credit-card"> 3B Branch Analysis </calcite-button>
+                        </div>
+                    </calcite-card>
+                </div>
+            </calcite-block>
+        </calcite-shell>
     </body>
 </html>
