@@ -1265,9 +1265,9 @@ bbbMap.ffiecDictionary = [
 
 bbbMap.bufferedSymbol = {
     type: "simple-fill",
-    color: [255, 255, 0, 0.05],
+    color: [255, 255, 0, 0.001],
     outline: {
-        color: [255, 255, 0, 0.3],
+        color: [255, 255, 0, 0.05],
         width: 0.5,
     },
 };

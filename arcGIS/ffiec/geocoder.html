@@ -107,6 +107,11 @@
                 </calcite-label>
             </div>
             <div id="map"></div>
+
+            <calcite-alert kind="brand" label="success" alot="alerts" id="alert" queue="immediate" icon>
+                <div id="alertTitle" slot="title">Title</div>
+                <div id="alertMsg" slot="message">Message</div>
+            </calcite-alert>
         </calcite-shell>
 
         <calcite-alert kind="danger" label="alert" id="errorAlert" queue="immediate" icon>
@@ -117,11 +122,6 @@
         <calcite-alert kind="success" label="success" id="successAlert" queue="immediate" icon>
             <div id="successTitle" slot="title">Success</div>
             <div id="successMsg" slot="message">Success Message</div>
-        </calcite-alert>
-
-        <calcite-alert kind="brand" label="success" id="alert" queue="immediate" icon>
-            <div id="alertTitle" slot="title">Title</div>
-            <div id="alertMsg" slot="message">Message</div>
         </calcite-alert>
     </body>
 </html>
