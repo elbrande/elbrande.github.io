@@ -246,11 +246,11 @@ bbbMap.buildLayer = function (layer, i) {
     } else if (type === "feature") {
         bbbMap.buildFeatureLayer(_layer, i);
     } else if (type === "point") {
-        if (window.location.hostname === "localhost") {
-            bbbMap.ajaxFeatureLayer(_layer, i);
-        } else {
-            bbbMap.bbbAPEXFeatureLayer(_layer, i);
-        }
+        //if (window.location.hostname === "localhost") {
+        bbbMap.ajaxFeatureLayer(_layer, i);
+        //} // else {
+        //bbbMap.bbbAPEXFeatureLayer(_layer, i);
+        //}
     }
 };
 
