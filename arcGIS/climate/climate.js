@@ -1477,3 +1477,8 @@ bbbMap.climateCategories.map((c) => {
     return c;
 });
 */
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOM loaded");
+    bbbMap.init();
+});
