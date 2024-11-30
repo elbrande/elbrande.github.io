@@ -49,7 +49,9 @@ bbbMap.initMap = () => {
                     defaultPopupTemplateEnabled: 1,
                     actions: [
                         { title: "Nearby Tracts", id: "find-nearby-tracts", icon: "polygon" },
+
                         { title: "Refresh Census Demographics", id: "refresh-tract-info", icon: "information" },
+                        { title: "ATM", id: "find-nearby-atm", icon: "credits" },
                         //{ title: "Summarize Area", id: "get-summary-report", icon: "file-report" },
                     ],
                     dockEnabled: 1,
@@ -112,6 +114,9 @@ bbbMap.initMap = () => {
                     }
                     if (e.action.id === "refresh-tract-info") {
                         bbbMap.refreshTractInfo(feature);
+                    }
+                    if (e.action.id === "find-nearby-atm") {
+                        bbbMap.getNearbyATM(feature);
                     }
                     if (e.action.id === "get-summary-report") {
                         bbbMap.getSummaryReport();
@@ -666,6 +671,166 @@ bbbMap.refreshTractInfo = function (feature) {
 
     bbbMap.getFFIEC(p, { matchedAddress: "Click" });
 };
+
+bbbMap.getATMContent = function (feature) {
+    console.log("getATMContent", feature);
+    rtn = ``;
+    //let obj = feature.graphic.attributes;
+    let obj = JSON.parse(feature.graphic.attributes.tags);
+
+    const table = bbbMap.getTable();
+
+    for (const key in obj) {
+        console.log("key", key);
+        if (obj.hasOwnProperty(key)) {
+            table.appendChild(bbbMap.addRow(key, obj[key]));
+            //rtn += `${key}: ${obj[key]}<br>`;
+        }
+    }
+    const div = document.createElement("div");
+    div.appendChild(table);
+    return div;
+};
+
+bbbMap.getATMTemplate = function () {
+    //let a = bbbMap.climateDictionary.find((c) => c.name === bbbMap.focusArea);
+
+    const template = {
+        title: `ATM`,
+        content: bbbMap.getATMContent,
+    };
+    return template;
+};
+
+bbbMap.getNearbyATM = async (feature, d = 1.2) => {
+    console.log("getNearbyATM", feature, d);
+    try {
+        point = feature ? feature.geometry : bbbMap?.point;
+        console.log("point", point);
+        const url = "https://overpass-api.de/api/interpreter";
+
+        // Define the Overpass QL query
+        const q = `
+        [out:json];
+        (
+          node["amenity"="atm"](around:2000,${point.latitude},${point.longitude});
+        );
+        out body;
+        `;
+
+        // Function to fetch ATM locations
+
+        // Send the query to the Overpass API
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ data: q }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error fetching data: ${response.statusText}`);
+        }
+
+        // Parse the response JSON
+        const data = await response.json();
+        console.log("ATM data", data);
+        // Extract and log ATM locations
+        if (data.elements && data.elements.length > 0) {
+            //let fields = [];
+            const features = data.elements.map((e) => {
+                let attr = { id: e.id, tags: JSON.stringify(e.tags) };
+
+                return { geometry: { type: "point", latitude: e.lat, longitude: e.lon }, attributes: attr, popupTemplate: { title: "ATM", content: "hi" } };
+            });
+            data.elements.forEach((element) => {
+                console.log(element);
+                const { lat, lon } = element;
+                console.log(`ATM found at Latitude: ${lat}, Longitude: ${lon}`);
+            });
+
+            //
+
+            let layer = {
+                id: "atmLayer",
+                title: "Nearby ATMs",
+                opacity: 0.75,
+                outFields: ["*"],
+                popupEnabled: 1,
+                popupTemplate: bbbMap.getATMTemplate(),
+                renderer: { type: "simple", symbol: { type: "simple-marker", size: 8, color: [56, 182, 255, 0.55], outline: { width: 0, color: "white" } } },
+                legendEnabled: 1,
+                visible: 1,
+                fields: [
+                    { name: "id", alias: "ID", type: "oid" },
+                    { name: "tags", alias: "Tags", type: "string" },
+                ],
+                source: features,
+            };
+
+            bbbMap.atmLayerSource = layer;
+            console.log("Creating client side ATM feature layer", features, layer);
+
+            bbbMap.atmLayer = new bbbMap.esri.FeatureLayer(layer);
+            bbbMap.map.add(bbbMap.atmLayer);
+            bbbMap.atmLayerView = await bbbMap.view.whenLayerView(bbbMap.atmLayer);
+
+            bbbMap.atmLayer.queryExtent().then((response) => {
+                bbbMap.view.goTo(response.extent.expand(1.2), bbbMap.goToOptions);
+            });
+        } else {
+            console.log("No ATMs found in the specified area.");
+        }
+    } catch (e) {
+        console.log("Error getting ATMs", e);
+    }
+};
+
+bbbMap.getNearbyATMxx = async (feature, d = 1.2) => {
+    console.log("getNearbyATM", feature, d);
+    try {
+        if (feature) {
+            bbbMap.selectedFeature = feature;
+        }
+        const url = "https://overpass-api.de/api/interpreter";
+        /*
+        const q = `
+        [out:json];
+        (
+            node["amenity"="atm"][around:500,${feature.geometry.latitude},${feature.geometry.longitude}]
+        );
+        out body;
+        `;
+*/
+        const q = `
+[out:json];
+(
+  node["amenity"="atm"](around:500,37.7749,-122.4194);
+);
+out body;
+`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ data: q }),
+        });
+        console.log("ATM results", response);
+        if (!response.ok) {
+            throw new Error(`Error fetching ATM data: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.elements && data.elements.length > 0) {
+            const { lat, lng } = element;
+            console.log(`ATM found at ${lat}, ${lng}`);
+        } else {
+            console.log("No ATMS found");
+        }
+    } catch (e) {
+        console.log("Error getting ATMs");
+    }
+};
+
 bbbMap.getNearbyTracts = async function (feature, tool) {
     console.log("getNearbyTracts", feature, tool);
     let point, geom;

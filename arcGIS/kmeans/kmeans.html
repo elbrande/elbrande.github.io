@@ -13,6 +13,10 @@
                 height: 100%;
                 width: 100%;
             }
+
+            #bbbLogger {
+                overflow-y: auto;
+            }
         </style>
         <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
         <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
@@ -23,15 +27,15 @@
         <script src="airports.js"></script>
         <script src="kmeans.js"></script>
     </head>
-    <body class="calcite-mode-dark">
+    <body class="calcite-mode-dark" style="visibility: hidden">
         <div id="bbbMapParameters">
             <calcite-label layout="inline"
                 >K
                 <calcite-input-text id="k" placeholder="Enter Number of Clusters" value="12" clearable autofocus>
-                    <calcite-button id="startKmeans" slot="action" icon-start="reset">Start</calcite-button>
-                    <calcite-button id="stepKmeans" slot="action" icon-start="pause">Step</calcite-button>
-                    <calcite-button id="runKmeans" slot="action" icon-start="play">Run</calcite-button>
-                    <calcite-button id="logger" slot="action" icon-start="access-string-results">Log</calcite-button>
+                    <calcite-button id="startKmeans" slot="action" icon-start="reset" round>Start</calcite-button>
+                    <calcite-button id="stepKmeans" slot="action" icon-start="pause" round>Step</calcite-button>
+                    <calcite-button id="runKmeans" slot="action" icon-start="play" round>Run</calcite-button>
+                    <calcite-button id="logger" slot="action" icon-start="access-string-results" round>Log</calcite-button>
                 </calcite-input-text>
             </calcite-label>
         </div>

@@ -129,6 +129,9 @@ bbbMap.initMap = () => {
                     } else if (e.action.id === "find-nearby-tracts") {
                         console.log("Popup Call: find-nearby-tracts");
                         bbbMap.getNearbyTracts(bbbMap.view.popup.selectedFeature, bbbMap._bufferSize);
+                    } else if (e.action.id === "find-nearby-atm") {
+                        console.log("Popup Call: find-nearby-atm");
+                        bbbMap.getNearbyATM(feature, bbbMap._bufferSize);
                     } else if (e.action.id === "google-maps") {
                         console.log("Popup Call: google-maps");
                         let lat, lng;
@@ -159,9 +162,11 @@ bbbMap.initMap = () => {
                     //}
                     bbbMap.view.popup.actions = [];
 
-                    //if (feature.geometry.type === 'point) {
-                    bbbMap.view.popup.actions.push({ title: "Nearby Branches", id: "find-nearby-branches", icon: "measure" });
-                    bbbMap.view.popup.actions.push({ title: "Nearby Census Tracts", id: "find-nearby-tracts", icon: "polygon-area" });
+                    bbbMap.view.popup.actions.push({ title: "Branches", id: "find-nearby-branches", icon: "measure" });
+                    bbbMap.view.popup.actions.push({ title: "Census Tracts", id: "find-nearby-tracts", icon: "polygon-area" });
+                    if (feature.geometry.type === "point") {
+                        bbbMap.view.popup.actions.push({ title: "ATMS", id: "find-nearby-atm", icon: "credits" });
+                    }
                     bbbMap.view.popup.actions.push({ title: "Google Maps", id: "google-maps", icon: "pin-tear" });
                     //}
                 }
@@ -943,6 +948,49 @@ bbbMap.showNearbyBranches = (results) => {
     bbbMap.buildFeatureLayer(layer, true, false);
 };
 
+bbbMap.getNearbyATM = async (feature, d = 1.2) => {
+    console.log("getNearbyATM", feature, d);
+    try {
+        if (feature) {
+            bbbMap.selectedFeature = feature;
+        }
+        const url = "https://overpass-api.de/api/interpreter";
+        /*
+        const q = `
+        [out:json];
+        (
+            node["amenity"="atm"][around:500,${feature.geometry.latitude},${feature.geometry.longitude}]
+        );
+        out body;
+        `;
+*/
+        const q = `
+[out:json];
+(
+  node["amenity"="atm"](around:500,37.7749,-122.4194);
+);
+out body;
+`;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ data: q }),
+        });
+        console.log("ATM results", response);
+        if (!response.ok) {
+            throw new Error(`Error fetching ATM data: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.elements && data.elements.length > 0) {
+            const { lat, lng } = element;
+            console.log(`ATM found at ${lat}, ${lng}`);
+        } else {
+            console.log("No ATMS found");
+        }
+    } catch (e) {}
+};
 bbbMap.getNearbyTracts = async (feature, d = 1.2) => {
     console.log("getNearbyTract", feature, d);
     try {

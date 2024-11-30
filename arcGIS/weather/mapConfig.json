@@ -87,7 +87,7 @@
     }
    }, {
     "_bbbLayerType": "point",
-    "_bbbAJAX": "getLocations.json",
+    "_bbbAJAX": "locations.json",
     "_bbbSmartColor": "",
     "_bbbFilterFields":["city"],
     "popupEnabed": 1,

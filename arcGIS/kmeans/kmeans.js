@@ -3,39 +3,48 @@ bbbMap = {};
 bbbMap.init = function () {
     bbbMap.initMap();
 };
+
 bbbMap.initMap = function () {
-    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/Graphic", "esri/layers/GraphicsLayer", "esri/geometry/geometryEngine"], function (esriConfig, Map, MapView, Graphic, GraphicsLayer, geometryEngine) {
-        esriConfig.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
+    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/Graphic", "esri/layers/GraphicsLayer", "esri/geometry/geometryEngine"], (esriConfig, Map, MapView, Graphic, GraphicsLayer, geometryEngine) =>
+        (async () => {
+            esriConfig.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
 
-        const map = new Map({ basemap: "arcgis-dark-gray" });
-        bbbMap.view = new MapView({
-            map: map,
-            center: [-96.3537, 40.6698],
-            zoom: 4,
-            highlightOptions: { color: "#B7AC83" },
-            popup: {
-                defaultPopupTemplateEnabled: 1,
-                dockEnabled: 1,
-                dockOptions: {
-                    buttonEnabled: 0,
-                    breakpoint: 0,
+            const map = new Map({ basemap: "arcgis-dark-gray" });
+            bbbMap.view = new MapView({
+                map: map,
+                center: [-96.3537, 40.6698],
+                zoom: 4,
+                highlightOptions: { color: "#B7AC83" },
+                popup: {
+                    defaultPopupTemplateEnabled: 1,
+                    dockEnabled: 1,
+                    dockOptions: {
+                        buttonEnabled: 0,
+                        breakpoint: 0,
+                    },
                 },
-            },
-            container: "map", // Div element
-        });
+                container: "map", // Div element
+            });
 
-        const dataLayer = new GraphicsLayer({ id: "dataLayer" });
-        map.add(dataLayer);
+            const dataLayer = new GraphicsLayer({ id: "dataLayer" });
+            map.add(dataLayer);
 
-        const clusterLayer = new GraphicsLayer({ id: "clusterLayer" });
-        map.add(clusterLayer);
+            const clusterLayer = new GraphicsLayer({ id: "clusterLayer", effect: "bloom()" });
+            map.add(clusterLayer);
 
-        bbbMap.view.when(function (v) {
-            console.log("View is ready.  Setup UI and Sketch Tools", bbbMap.view);
-            bbbMap.ui();
-            bbbMap.kmeansMap = new bbbMap.KMEANS(map, bbbMap.view, { data: bbbMapData }, { Graphic: Graphic, geometryEngine: geometryEngine });
-        });
-    }); //Require
+            bbbMap.view.when(async (v) => {
+                console.log("View is ready.  Setup UI and Sketch Tools", bbbMap.view);
+
+                data = await fetch("locations.json");
+                let jsonData = await data.json();
+                jsonData = jsonData.filter((d) => d.country === "US");
+                jsonData = jsonData.slice(0, 1000);
+
+                bbbMap.ui();
+                bbbMap.kmeansMap = new bbbMap.KMEANS(map, bbbMap.view, { data: jsonData }, { Graphic: Graphic, geometryEngine: geometryEngine });
+                document.body.style.visibility = "";
+            });
+        })()); //end require
 
     // map = map;
 };
@@ -89,6 +98,7 @@ bbbMap.KMEANS = function (map, view, opt, arcgis) {
     this.logID = 0;
     this.infoWindow = null; //new google.maps.InfoWindow({'content': 'Info'});
     this.center = { lat: 39.990268, lng: -93.569075 };
+    this.assigments = [];
 
     this.initKmeans();
 };
@@ -97,7 +107,7 @@ bbbMap.KMEANS.prototype.defaults = {
     k: 15,
     n: 35,
     runInterval: 250,
-    runLimit: 25,
+    runLimit: 60,
     bermuda: { lat: 32.299507, lng: -64.79 },
     maxIntensity: 30,
     radius: 0.8,
@@ -111,19 +121,20 @@ bbbMap.KMEANS.prototype.defaults = {
     clusterLayerId: "kmeansClusters",
     locationSymbol: {
         type: "simple-marker",
-        color: [226, 119, 40, 0.5], // Orange
-        size: 8,
+        color: [192, 192, 192, 0.2],
+        size: 4,
         outline: {
-            color: [255, 255, 255, 0.25], // White
-            width: 0.25,
+            color: [255, 255, 255, 0.2], // White
+            width: 0,
         },
     },
     clusterSymbol: {
         type: "simple-marker",
-        color: [255, 255, 255, 0.25], // Orange
+        color: [226, 119, 40, 0.5],
+        size: 12,
         outline: {
-            color: [226, 119, 40, 0.5], // White
-            width: 0.25,
+            color: [255, 255, 255, 0.25], // White
+            width: 0.5,
         },
     },
 };
@@ -215,17 +226,13 @@ bbbMap.KMEANS.prototype.start = function () {
     this.addLocations();
 
     this.removeClusters();
+
     this.seedClusters();
 };
 
 bbbMap.KMEANS.prototype.removeClusters = function () {
     console.log("Removing clusters");
-    let that = this;
-    if (this.clusterLayer.graphics.items) {
-        this.clusterLayer.graphics.items.forEach(function (c) {
-            that.clusterLayer.graphics.remove(c);
-        });
-    }
+    bbbMap.kmeansMap.clusterLayer.removeAll();
 };
 
 bbbMap.KMEANS.prototype.addLocations = function () {
@@ -238,12 +245,16 @@ bbbMap.KMEANS.prototype.addLocations = function () {
     if (that.dataLayer.graphics.items.length > 0) {
         console.log("Markers already added");
     } else {
-        temp = that._data.features.map(function (feature, i) {
-            const geom = { type: feature.geometry.type, longitude: feature.geometry.coordinates[0], latitude: feature.geometry.coordinates[1] };
+        //temp = that._data.features.map(function (feature, i) {
+        //let data = that._data.filter((d) => d.country === "US");
+        temp = that._data.map(function (feature, i) {
+            //const geom = { type: feature.geometry.type, longitude: feature.geometry.coordinates[0], latitude: feature.geometry.coordinates[1] };
+            const geom = { type: "point", longitude: feature.longitude, latitude: feature.latitude };
             const pointGraphic = new that.arcgis.Graphic({
                 geometry: geom,
                 symbol: that.opt.locationSymbol,
-                attributes: feature.geometry.properties,
+                //attributes: feature.geometry.properties,
+                attributes: { name: feature.name, city: feature.city },
             });
             that.dataLayer.add(pointGraphic);
 
@@ -251,7 +262,7 @@ bbbMap.KMEANS.prototype.addLocations = function () {
             return pointGraphic;
         });
     }
-    that.log(`Added ${that._data.features.length} features`);
+    that.log(`Added ${that._data.length} features`);
     /*
    for (const feature of this._data.features) {
      // create a HTML element for each feature
@@ -408,9 +419,14 @@ bbbMap.KMEANS.prototype.seedClusters = function () {
         clusterInfo = {},
         that = this;
     //require(["esri/Graphic"], function(Graphic) {
+    that.assigments = [];
     while (i < that.opt.k) {
-        const geom = { type: "point", longitude: that.getRandom(-124.736342, -66.945392), latitude: that.getRandom(24.52, 49.38) };
-        const c = new that.arcgis.Graphic({
+        let idx = Math.floor(Math.random() * that._data.length);
+        let point = that._data[idx];
+
+        //const geom = { type: "point", longitude: that.getRandom(-124.736342, -66.945392), latitude: that.getRandom(24.52, 49.38) };
+        const geom = { type: "point", longitude: point.longitude - 0.1, latitude: point.latitude + 0.1 };
+        let c = new that.arcgis.Graphic({
             geometry: geom,
             symbol: that.opt.clusterSymbol,
             attributes: { cluster: i },
@@ -419,6 +435,8 @@ bbbMap.KMEANS.prototype.seedClusters = function () {
         c._oldPosition = { lat: "", lng: "" };
         c._locs = [];
         that.clusterLayer.add(c);
+
+        that.assigments.push({ id: i, geometry: geom, oldGeometry: {}, locs: [] });
 
         //that._clusterMarkers.push(c);
         i++;
@@ -447,12 +465,13 @@ bbbMap.KMEANS.prototype.detectMovement = function () {
         cntMoves = 0,
         that = this;
 
-    this.clusterLayer.graphics.items.forEach(function (cluster, i) {
+    //this.clusterLayer.graphics.items.forEach(function (cluster, i) {
+    this.assigments.forEach((cluster, i) => {
         console.log("Checking Cluster", i, cluster);
         p1 = cluster.geometry;
-        p2 = cluster._oldPosition;
+        p2 = cluster.oldGeometry;
 
-        if (p1.latitude !== p2.lat && p1.longitude !== p2.lng) {
+        if (p1.latitude !== p2.latitude && p1.longitude !== p2.longitude) {
             m = true;
             cntMoves++;
         } else {
@@ -483,6 +502,7 @@ bbbMap.KMEANS.prototype.run = function () {
 
             if (that.detectMovement() === false) {
                 clearInterval(timer);
+                that.log(`No cluster was moved.  Locations Optimized.`);
             }
 
             counter += 1;
@@ -501,10 +521,13 @@ bbbMap.KMEANS.prototype.assign = function () {
         index,
         dist = 0,
         that = this,
-        cnt = 0;
+        cnt = 0,
+        geom;
     //clear assignments
     that.clusterLayer.graphics.items.forEach(function (c) {
         c._locs = [];
+        const cluster = that.assigments.find((a) => a.id === c.attributes.cluster);
+        cluster.locs = [];
     });
 
     //For each location
@@ -514,20 +537,26 @@ bbbMap.KMEANS.prototype.assign = function () {
         min = Infinity;
         that.clusterLayer.graphics.items.forEach(function (c, i) {
             dist = that.arcgis.geometryEngine.distance(loc.geometry, c.geometry);
-            //console.log("Dist", dist, " cluster: ", i);
+            //console.log(loc.attributes.city, "Dist", dist, " cluster: ", i, c);
+
             cnt++;
             if (dist < min) {
-                //console.log("New Min", i);
                 min = dist;
                 index = i;
+                geom = loc.geometry;
             }
         });
 
         //console.log("closestCentroid", index, dist);
         loc._dist = min;
         loc.clusterID = index;
+        console.log("Assignment complete", min, index);
         that.clusterLayer.graphics.items[index]._locs.push(loc);
+
+        let assigment = that.assigments.find((a) => a.id === index);
+        assigment.locs.push({ d: min, loc: j, geometry: geom });
     });
+
     that.log(`Assigment Complete ${cnt} calculations`);
 };
 
@@ -537,32 +566,76 @@ bbbMap.KMEANS.prototype.moveCluster = function () {
         that = this,
         _oldPosition;
 
-    this.clusterLayer.graphics.items.forEach(function (c, i) {
-        _oldPosition = { lat: c.geometry.latitude, lng: c.geometry.longitude };
+    //this.clusterLayer.graphics.items.forEach(function (c, i) {
+
+    that.assigments.forEach((c, i) => {
+        //for (const c in that.assigments) {
+        //        _oldPosition = { lat: c.geometry.latitude, lng: c.geometry.longitude };
+
+        console.log("Moving Cluster", c.id, c);
+        c.oldGeometry = Object.assign({}, c.geometry); // lat: c.geometry.latitude, lng: c.geometry.longitude };
+
         console.log("Moving Cluster Begin", i, c);
-        if (c._locs && c._locs.length > 0) {
-            console.log("Locations Cluster Begin", c._locs.length);
-            centroid = that.getCentroid(c._locs);
+
+        if (c.locs && c.locs.length > 0) {
+            console.log("Locations Cluster Begin", c.locs.length, c.locs);
+            centroid = that.getCentroid(c.locs);
+            console.log("Centroid", centroid);
         } else {
+            console.log("No assigned locations.  Move to bermuda triangle");
             centroid = that.opt.bermuda;
         }
 
         cnt++;
+        c.geometry.latitude = centroid.lat;
+        c.geometry.longitude = centroid.lng;
 
         //Move cluster by removing and adding new one
 
-        console.log("Moving Cluster", i, c, centroid.lat, centroid.lng);
-        let newCluster = c.clone();
-        newCluster.geometry.latitude = centroid.lat;
-        newCluster.geometry.longitude = centroid.lng;
-        newCluster._oldPosition = _oldPosition;
-        console.log("New cluster def", newCluster);
+        let graphic = bbbMap.kmeansMap.clusterLayer.graphics.items.find((g) => g.attributes.cluster === c.id);
+        console.log("Moving Cluster", c.id, graphic, i, c, centroid.lat, centroid.lng);
+        let moveGraphic = graphic.clone();
+        moveGraphic.geometry.latitude = centroid.lat;
+        moveGraphic.geometry.longitude = centroid.lng;
+        //newCluster._oldPosition = _oldPosition;
+        console.log("New cluster def", moveGraphic);
 
-        that.clusterLayer.graphics.remove(c);
-        that.clusterLayer.graphics.add(newCluster);
+        that.clusterLayer.graphics.remove(graphic);
+        that.clusterLayer.graphics.add(moveGraphic);
     });
 
     that.log(`Movement step for ${cnt} clusters complete `);
+};
+
+bbbMap.KMEANS.prototype.getCentroidxxx = function (locs) {
+    let latXTotal = 0,
+        latYTotal = 0,
+        lonDegreesTotal = 0,
+        latDegreesTotal = 0,
+        latDegrees = 0,
+        lonDegrees = 0,
+        latRadians = 0,
+        finalLatRadians = 0,
+        finalLatDegrees = 0,
+        finalLonDegrees = 0;
+
+    locs.forEach(function (loc) {
+        latDegrees = loc.latitude;
+        lonDegrees = loc.longitude;
+        latRadians = (Math.PI * latDegrees) / 180;
+
+        latXTotal += Math.cos(latRadians);
+        latYTotal += Math.sin(latRadians);
+
+        lonDegreesTotal += lonDegrees;
+    });
+
+    finalLatRadians = Math.atan2(latYTotal, latXTotal);
+    finalLatDegrees = (finalLatRadians * 180) / Math.PI;
+    finalLonDegrees = lonDegreesTotal / locs.length;
+
+    return { lat: finalLatDegrees, lng: finalLonDegrees };
+    // return [finalLonDegrees, finalLatDegrees];
 };
 
 bbbMap.KMEANS.prototype.getCentroid = function (locs) {

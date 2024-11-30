@@ -13,7 +13,7 @@
             .grid {
                 margin: 0.75rem;
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                grid-template-columns: repeat(4, minmax(300px, 1fr));
                 grid-gap: 1rem;
                 justify-content: space-evenly;
             }
@@ -68,11 +68,24 @@
 
                     <calcite-card>
                         <span slot="heading">KMeans</span>
-                        <img slot="thumbnail" alt="Branches Screenshot" src="img/kmeans.png" />
+                        <img slot="thumbnail" alt="mapBox Screenshot" src="img/kmeans.png" />
                         <span slot="description">Use the KMeans algorithm to optimize k clusters to minimize distance to locations</span>
                         <p>Run a geospatial of KMeans to minimize disance to locations.</p>
                         <div slot="footer-start">
                             <calcite-button round width="full" kind="brand" href="arcGIS/kmeans/kmeans.html" icon-start="function"> 3B KMeans Clusters </calcite-button>
+                        </div>
+                    </calcite-card>
+                </div>
+            </calcite-block>
+            <calcite-block heading="MapBox API Solutions" open collapsible>
+                <div id="mapBoxMenu" class="grid">
+                    <calcite-card>
+                        <img slot="thumbnail" alt="Climate Screenshot" src="img/mapBoxKmeans.png" />
+                        <span slot="heading">KMeans</span>
+                        <span slot="description">Use the KMeans algorithm with MapBox to optimize k clusters to minimize distance to locations</span>
+                        <p>Run a geospatial of KMeans to minimize disance to locations.</p>
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="mapBox/kmeans.html" icon-start="rain"> 3B MapBox Kmeans Clusters </calcite-button>
                         </div>
                     </calcite-card>
                 </div>
