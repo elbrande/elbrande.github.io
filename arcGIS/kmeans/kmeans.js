@@ -26,10 +26,10 @@ bbbMap.initMap = function () {
                 container: "map", // Div element
             });
 
-            const dataLayer = new GraphicsLayer({ id: "dataLayer" });
+            const dataLayer = new GraphicsLayer({ id: "dataLayer", popupEnabled: 1 });
             map.add(dataLayer);
 
-            const clusterLayer = new GraphicsLayer({ id: "clusterLayer", effect: "bloom()" });
+            const clusterLayer = new GraphicsLayer({ id: "clusterLayer", popupEnabled: 1, effect: "bloom()" });
             map.add(clusterLayer);
 
             bbbMap.view.when(async (v) => {
