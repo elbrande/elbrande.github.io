@@ -826,13 +826,14 @@ bbbMap.ui.init = function () {
         let field = e.target.value;
         let chartDiv = document.getElementById("chart-div");
         document.getElementById("chartBlock").open = true;
+        let statisticType = "count";
         if (layer && field && chartDiv) {
             let query = layer.createQuery();
             query.outStatistics = [
                 {
                     onStatisticField: field,
-                    outStatisticFieldName: "count",
-                    statisticType: "count",
+                    outStatisticFieldName: statisticType,
+                    statisticType: statisticType,
                 },
             ];
             query.groupByFieldsForStatistics = [field];
@@ -843,9 +844,44 @@ bbbMap.ui.init = function () {
                 f.features = f.features.sort(function (a, b) {
                     return b.attributes.count - a.attributes.count;
                 });
+                const container = document.createElement("div");
+                container.style.width = "100%";
+                container.style.height = "350px";
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                container.appendChild(canvas);
+
+                let chartData = {
+                    labels: response.features.map((m) => m.attributes[field]),
+                    datasets: [
+                        {
+                            label: "Chart Data",
+                            data: response.features.map((m) => m.attributes[statisticType]),
+                        },
+                    ],
+                };
+
+                const chart = new Chart(ctx, {
+                    type: "bar",
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                enabled: true,
+                            },
+                            legend: {
+                                display: true,
+                            },
+                        },
+                    },
+                });
+
+                document.getElementById("chart-div").appendChild(container);
 
                 //console.log('Sorted features by count', f);
-
+                /*
                 let definition = {};
                 definition.type = "bar-horizontal";
                 definition.datasets = [{ data: response, orderByFields: "count" }];
@@ -868,6 +904,7 @@ bbbMap.ui.init = function () {
                 console.log("Sizing Chart ", h);
 
                 chart.show();
+                */
             });
         }
     });

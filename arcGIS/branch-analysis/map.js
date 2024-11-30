@@ -1332,3 +1332,8 @@ bbbMap.buildReportTableHTML = function (results, layer) {
     table.appendChild(tbody);
     return table;
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOM loaded");
+    bbbMap.init();
+});
