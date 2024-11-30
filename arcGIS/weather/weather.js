@@ -4,7 +4,7 @@ bbbMap.versionNumber = "2.2.0.0";
 bbbMap.ui = {};
 bbbMap.layerViews = [];
 
-bbbMap.ready = function ([mapConfig]) {
+bbbMap.ready = function (mapConfig) {
     console.log(bbbMap.versionNumber, "Promise is ready ", mapConfig);
     mapConfig = typeof mapConfig === "string" ? JSON.parse(mapConfig) : mapConfig;
     bbbMap._config = mapConfig;
@@ -28,8 +28,8 @@ bbbMap.catch = function (e) {
     console.log("Promise Failed", e);
 
     document.querySelector("calcite-loader").active = false;
-    $("body").append("<h1>Error Retreiving Map Definition for &REQUEST.</h1>");
-    $("body").append(e.message);
+    document.body.append("<h1>Error Retreiving Map Definition for &REQUEST.</h1>");
+    document.body.append(e.message);
 };
 
 bbbMap.set = function (el, attrs) {
@@ -38,6 +38,7 @@ bbbMap.set = function (el, attrs) {
     }
 };
 
+/*
 bbbMap.bbbAPEXFeatureLayer = function (layerConfig, i) {
     console.log("bbbAPEXFeatureLayer", layerConfig, i);
     let p1;
@@ -81,7 +82,7 @@ bbbMap.bbbAJAXPromise = function (n, mapInfo) {
     console.log("Calling AJAX", c);
     return $.ajax({ type: "POST", url: "wwv_flow.ajax", data: c, dataType: "json" });
 };
-
+*/
 bbbMap.callAJAX = function (n, mapInfo) {
     console.log("Calling AJAX", n);
     return bbbMap.bbbAJAXPromise(n, mapInfo);
@@ -132,7 +133,8 @@ bbbMap.buildMap = function (opt) {
         console.log("Map Constructed. View", opt.view);
 
         let _viewConfig = Object.fromEntries(Object.entries(opt.view).filter(([_, v]) => v !== null));
-        _viewConfig = $.extend({}, bbbMap.viewDefaults, _viewConfig);
+
+        _viewConfig = Object.assign({}, bbbMap.viewDefaults, _viewConfig);
         _viewConfig.map = map;
         bbbMap._viewSettings = _viewConfig;
 
@@ -361,7 +363,17 @@ bbbMap.buildFeatureLayer = function (opt, i) {
     });
 };
 
-bbbMap.ajaxFeatureLayer = function (opt, i) {
+bbbMap.ajaxFeatureLayer = async function (opt, i) {
+    console.log("ajaxFeatureLayer", opt, i);
+    try {
+        data = await fetch(opt._bbbAJAX);
+        let results = await data.json();
+        console.log("ajaxFeatureLayer results", results);
+        bbbMap.buildPointLayer(results, i, opt);
+    } catch (e) {
+        console.log("Failed to get layer features ", e);
+    }
+    /*
     $.getJSON({ url: opt._bbbAJAX, cache: false })
         .done(function (results) {
             if (typeof results === "string") {
@@ -372,6 +384,7 @@ bbbMap.ajaxFeatureLayer = function (opt, i) {
         .fail(function (e) {
             console.log("Failed to get layer features ", e);
         });
+        */
 };
 
 bbbMap.buildPointLayer = function (pointData, i, opt) {
@@ -438,7 +451,7 @@ bbbMap.ui.createLogItem = function (title, description) {
 
     card.appendChild(cardTitle);
     card.appendChild(cardDesc);
-    $("#log-container").prepend(card);
+    document.getElementById("log-container").prepend(card);
 };
 ////////////////////////////////Sketch Functions///////////////////////////////////////////////////
 bbbMap.ui.resetSketch = function () {
@@ -551,8 +564,7 @@ bbbMap.ui.init = function () {
         const interactLayer = document.getElementById("interactLayer");
 
         let url;
-
-        $(interactLayer).on("calciteSelectChange", (e) => {
+        interactLayer.addEventListener("calciteSelectChange", (e) => {
             console.log("Interact Changed", e.target.value, e);
 
             interactContainer.innerHTML = "";
@@ -690,11 +702,12 @@ bbbMap.ui.init = function () {
     });
 
     /////////////////////////////////////////sketch///////////////////////////////////
-    $("#resetSketch").on("click", (e) => {
+
+    document.getElementById("resetSketch").addEventListener("click", (e) => {
         bbbMap.ui.resetSketch();
     });
 
-    $("#resetInteract").on("click", (e) => {
+    document.getElementById("resetInteract").addEventListener("click", (e) => {
         if (bbbMap.ui.interactLayer) {
             bbbMap.ui.interactLayer.destroy();
         }
@@ -775,14 +788,14 @@ bbbMap.ui.init = function () {
     });
 
     //chart handlers
-    $("#chartLayer").on("calciteSelectChange", function (e) {
+    document.getElementById("chartLayer").addEventListener("calciteSelectChange", (e) => {
         console.log("Chart Layer Selected", e.target.value);
         let layer = bbbMap.map.findLayerById(document.getElementById("chartLayer").value);
         const chartField = document.getElementById("chartField");
         const chartFieldContainer = document.getElementById("chartFieldLabel");
         let option;
 
-        $("#chartField").empty();
+        document.getElementById("chartField").innerHTML = "";
         chartFieldContainer.hidden = true;
         document.getElementById("chart-div").innerHTML = "";
 
@@ -807,7 +820,7 @@ bbbMap.ui.init = function () {
         }
     });
 
-    $("#chartField").on("calciteSelectChange", function (e) {
+    document.getElementById("chartField").addEventListener("calciteSelectChange", (e) => {
         console.log("chart field changed", e.target.value);
         let layer = bbbMap.map.findLayerById(document.getElementById("chartLayer").value);
         let field = e.target.value;
@@ -851,7 +864,7 @@ bbbMap.ui.init = function () {
                 let h = response.features.length * 30;
                 h = Math.max(h, 300);
 
-                $("#chart-div").css({ height: h });
+                document.getElementById("chart-div").style.height = h;
                 console.log("Sizing Chart ", h);
 
                 chart.show();
@@ -859,7 +872,8 @@ bbbMap.ui.init = function () {
         }
     });
     //Styler styleLayerLOV
-    $("#styleLayerLOV").on("calciteSelectChange", (e) => {
+
+    document.getElementById("styleLayerLOV").addEventListener("calciteSelectChange", (e) => {
         let layer = bbbMap.map.findLayerById(document.getElementById("styleLayerLOV").value);
         if (layer) {
             console.log("Style layer selected", e.target.value, layer);
@@ -898,49 +912,57 @@ bbbMap.ui.init = function () {
         }
     });
 
-    $("#style calcite-slider").on("calciteSliderInput", (e) => {
-        let layer = bbbMap.map.findLayerById($("#styleLayerLOV").val());
-        let renderer = layer.renderer;
-        if (renderer.symbol) {
-            if (e.target.id === "iconSize") {
-                renderer.symbol.size = e.target.value;
-            }
+    document.querySelectorAll("calcite-slider").forEach((p) => {
+        p.addEventListener("calciteSliderInput", (e) => {
+            let layer = bbbMap.map.findLayerById(document.getElementById("styleLayerLOV").value);
+            let renderer = layer.renderer;
+            if (renderer.symbol) {
+                if (e.target.id === "iconSize") {
+                    renderer.symbol.size = e.target.value;
+                }
 
-            if (e.target.id === "iconOpacity") {
-                let color = renderer.symbol.color;
-                color.a = e.target.value;
+                if (e.target.id === "iconOpacity") {
+                    let color = renderer.symbol.color;
+                    color.a = e.target.value;
 
-                renderer.symbol.color = [color.r, color.g, color.b, color.a];
+                    renderer.symbol.color = [color.r, color.g, color.b, color.a];
+                }
+                if (e.target.id === "iconOutlineWidth") {
+                    renderer.symbol.outline.width = e.target.value;
+                }
             }
-            if (e.target.id === "iconOutlineWidth") {
-                renderer.symbol.outline.width = e.target.value;
-            }
-        }
+        });
     });
 
-    $("#style calcite-input").on("calciteInputInput", (e) => {
-        let layer = bbbMap.map.findLayerById($("#styleLayerLOV").val());
-        let renderer = layer.renderer;
-        if (e.target.id === "iconColor") {
-            renderer.symbol.color = e.target.value;
-        }
-        if (e.target.id === "iconOutlineColor") {
-            renderer.symbol.outline.color = e.target.value;
-        }
+    document.querySelectorAll("calcite-input").forEach((p) => {
+        p.addEventListener("calciteInputInput", (e) => {
+            let layer = bbbMap.map.findLayerById(document.getElementById("styleLayerLOV").value);
+
+            let renderer = layer.renderer;
+            if (e.target.id === "iconColor") {
+                renderer.symbol.color = e.target.value;
+            }
+            if (e.target.id === "iconOutlineColor") {
+                renderer.symbol.outline.color = e.target.value;
+            }
+        });
     });
 
-    $("#resetStyle").on("click", (e) => {
-        let layer = bbbMap.map.findLayerById($("#styleLayerLOV").val());
+    document.getElementById("resetStyle").addEventListener("click", (e) => {
+        let layer = bbbMap.map.findLayerById(document.getElementById("styleLayerLOV").value);
+
         console.log("Reset Style", e, layer);
         if (layer && layer._bbbRendererRestore) {
             layer.renderer = layer._bbbRendererRestore;
         }
-        $("#styleLayerLOV").val("");
+
+        document.getElementById("styleLayerLOV").value = "";
         document.getElementById("style").open = false;
     });
 
     //Reorder Layers
-    $("#layers-container-list").on("calciteListOrderChange", (e) => {
+
+    document.getElementById("layers-container-list").addEventListener("calciteListOrderChange", (e) => {
         console.log("Reording Layers", e);
         e.detail.forEach(function (layerId, i) {
             bbbMap.map.reorder(bbbMap.map.findLayerById(layerId), i);
@@ -948,11 +970,13 @@ bbbMap.ui.init = function () {
     });
 
     //Add layer button
-    $("#addLayerBtn").on("click", (e) => {
+
+    document.getElementById("addLayerBtn").addEventListener("click", (e) => {
         console.log("Saving new layer ", e);
-        let type = $("#addWebServiceType").val();
-        let title = $("#addWebServiceTitle").val();
-        let url = $("#addWebServiceURL").val();
+        document.getElementById;
+        let type = document.getElementById("#addWebServiceType").value;
+        let title = document.getElementById("#addWebServiceTitle").value;
+        let url = document.getElementById("#addWebServiceURL").value;
 
         if (type === "csv") {
             console.log("Converting URL to CSV BLOB");
@@ -964,74 +988,66 @@ bbbMap.ui.init = function () {
         document.getElementById("add-new-layer-modal").open = false;
     });
     //Reset FIlters
-    $("#resetFilters").on("click", (e) => {
+
+    document.getElementById("resetFilters").addEventListener("click", (e) => {
         console.log("Clearing Filters", e);
-        $("calcite-combobox.bbb-map-filter-list calcite-combobox-item").each((i, cvl) => {
+        document.querySelectorAll("calcite-combobox.bbb-map-filter-list calcite-combobox-item").forEach((cvl) => {
             cvl.selected = false;
         });
     });
 
     //todo All panel action bar buttons
-    $("calcite-action-bar").on("click", function (e) {
-        console.log("Button clicked", e.target.tagName, e.target.dataset.actionId, e);
-        if (e.target.tagName === "CALCITE-ACTION") {
-            //Updated Actions for v1.03
-            bbbMap.nextPanel = e.target.dataset.actionId;
-            console.log("Active", bbbMap.activePanel, "Next", bbbMap.nextPanel);
-            if (bbbMap.nextPanel && bbbMap.nextPanel !== bbbMap.activePanel) {
-                if (bbbMap.activePanel) {
-                    document.querySelector(`[data-action-id=${bbbMap.activePanel}]`).active = false;
-                    document.querySelector(`[data-panel-id=${bbbMap.activePanel}]`).closed = true;
+    document.querySelectorAll("calcite-action-bar").forEach((p) => {
+        p.addEventListener("click", (e) => {
+            console.log("Button clicked", e.target.tagName, e.target.dataset.actionId, e);
+            if (e.target.tagName === "CALCITE-ACTION") {
+                //Updated Actions for v1.03
+                bbbMap.nextPanel = e.target.dataset.actionId;
+                console.log("Active", bbbMap.activePanel, "Next", bbbMap.nextPanel);
+                if (bbbMap.nextPanel && bbbMap.nextPanel !== bbbMap.activePanel) {
+                    if (bbbMap.activePanel) {
+                        document.querySelector(`[data-action-id=${bbbMap.activePanel}]`).active = false;
+                        document.querySelector(`[data-panel-id=${bbbMap.activePanel}]`).closed = true;
+                    }
+
+                    document.querySelector(`[data-action-id=${bbbMap.nextPanel}]`).active = true;
+                    document.querySelector(`[data-panel-id=${bbbMap.nextPanel}]`).closed = false;
+                    bbbMap.activePanel = bbbMap.nextPanel;
                 }
 
-                document.querySelector(`[data-action-id=${bbbMap.nextPanel}]`).active = true;
-                document.querySelector(`[data-panel-id=${bbbMap.nextPanel}]`).closed = false;
-                bbbMap.activePanel = bbbMap.nextPanel;
-            }
+                //Modal Layer
+                bbbMap.modalPanel = e.target.dataset.modalId;
 
-            //Modal Layer
-            bbbMap.modalPanel = e.target.dataset.modalId;
-
-            if (bbbMap.modalPanel) {
-                console.log("Modal Panel", bbbMap.modalPanel);
-                document.getElementById(bbbMap.modalPanel).open = true;
-            }
-
-            /*
-			   if (e.target.dataset.modalId === "add-new-layer-modal") {
-			      document.querySelector('#add-new-layer-modal').open = true;
-			   }
-
-			   if (e.target.dataset.modalId === "add-new-layer-modal") {
-			      document.querySelector('#chart-modal').open = true;
-			   }
-
-*/
-
-            //Handle Close Table
-            if (e.target.id === "close-table") {
-                console.log("Closing Feature Table and Re-sizing Map");
-                if (bbbMap.featureTable) {
-                    bbbMap.featureTable.destroy();
-                    bbbMap.featureTable = "";
+                if (bbbMap.modalPanel) {
+                    console.log("Modal Panel", bbbMap.modalPanel);
+                    document.getElementById(bbbMap.modalPanel).open = true;
                 }
 
-                $(bbbMap.view.container).css({ height: "100%" });
-                e.target.hidden = true;
+                //Handle Close Table
+                if (e.target.id === "close-table") {
+                    console.log("Closing Feature Table and Re-sizing Map");
+                    if (bbbMap.featureTable) {
+                        bbbMap.featureTable.destroy();
+                        bbbMap.featureTable = "";
+                    }
+
+                    bbbMap.view.container.style.height = "100%";
+                    e.target.hidden = true;
+                }
             }
-        }
+        });
     });
 
-    $("calcite-panel").on("calcitePanelClose", function (e) {
-        console.log("Panel Dismissed", e.target.heading);
-        let btn = document.querySelector(`[data-action-id=${e.target.dataset.panelId}]`);
-        bbbMap.activePanel = "";
+    document.querySelectorAll("calcite-panel").forEach((p) => {
+        p.addEventListener("calcitePanelClose", (e) => {
+            console.log("Panel Dismissed", e.target.heading);
+            let btn = document.querySelector(`[data-action-id=${e.target.dataset.panelId}]`);
+            bbbMap.activePanel = "";
 
-        if (btn) {
-            btn.active = !e.target.closed;
-        }
-
-        // !e.target.disissed ? bbbMap.activePanel = e.target.dataset.panelId : null;
+            if (btn) {
+                btn.active = !e.target.closed;
+            }
+        });
     });
 };
 //end ui
@@ -1212,8 +1228,8 @@ bbbMap.ui.btnHandler = function (layer, e) {
 
             bbbMap.buildFeatureTable(layer, {}, featureTableDiv);
             containerDiv.appendChild(featureTableDiv);
-            $(bbbMap.view.container).css({ height: "60%" });
-            $(containerDiv).css({ height: "40%" });
+            bbbMap.view.container.style.height = "60%";
+            containerDiv.style.height = "40%";
         }
     }
 };
@@ -1240,3 +1256,23 @@ bbbMap.ui.buildLayerInfo = function (layer) {
     }
     /////////////////////////////////LAYER INFO END//////////////////////////////////////////////////
 };
+
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("Ready");
+    //document.getElementById("wwvFlowForm").onsubmit = function () {
+    //return false;
+    //};
+    try {
+        config = await fetch("mapConfig.json");
+        let jsonConfig = await config.json();
+        console.log(jsonConfig);
+        bbbMap.ready(jsonConfig);
+    } catch (e) {
+        bbbMap.catch(e);
+    }
+
+    //Promise.all([$.getJSON({ url: "mapConfig.json", cache: false })])
+    //Promise.all([fetch("mapConfig.json")])
+    //.then(bbbMap.ready)
+    //.catch(bbbMap.catch);
+});

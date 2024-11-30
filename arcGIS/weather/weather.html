@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>BBB Climate</title>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css">
     <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
     <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
@@ -29,8 +30,7 @@
       .full-height {height: 600px;}
     </style>
 
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- cedar -->
+	<!-- cedar -->
    <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
    <script src="https://www.amcharts.com/lib/3/serial.js"></script>
    <script src="https://unpkg.com/@esri/cedar/dist/umd/themes/amCharts/calcite.js"></script>
@@ -39,17 +39,6 @@
    <!-- end cedar-->
    <script src="https://js.arcgis.com/4.31/"></script>
    <script src="weather.min.js"></script>
-  <script>
-
-  
-  $(function() {
-     console.log('Ready');
-     document.getElementById('wwvFlowForm').onsubmit = function(){return false;};
-     
-     Promise.all([$.getJSON({"url": "mapConfig.json", cache: false})]).then(bbbMap.ready).catch(bbbMap.catch);
-
-  });
-  </script>
   </head>
   <body>
 <form action="wwv_flow.accept?p_context=ut/icons/17110063106989" method="post" name="wwv_flow" id="wwvFlowForm" data-oj-binding-provider="none" novalidate  autocomplete="off">
