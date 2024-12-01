@@ -1,5 +1,5 @@
 const bbbMap = {};
-
+//https://www.arcgis.com/home/item.html?id=9da4eeb936544335a6db0cd7a8448a51
 bbbMap.init = () => {
     console.log("bbbMap.init");
     bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
@@ -62,6 +62,8 @@ bbbMap.initMap = () => {
                 },
                 container: "map",
             });
+
+            bbbMap.view.ui.components = ["attribution"];
 
             bbbMap.legendContainer = document.createElement("div");
             bbbMap.legendWidget = new Legend({ view: bbbMap.view, container: bbbMap.legendContainer });
@@ -871,104 +873,7 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
             throw new Error("Unable to find a census tract for this location");
         }
 
-        let layer = {
-            id: "tractShapes",
-            title: "Census Tract Shapes",
-            opacity: 0.75,
-            outFields: ["*"],
-            popupEnabled: 1,
-            popupTemplate: bbbMap.getPopupTemplate(),
-            //renderer: { type: "simple", symbol: { type: "simple-fill", color: [183, 172, 131, 0.5], outline: { color: [255, 255, 255, 0.75], width: 0.1 } } },
-            renderer: bbbMap.getClimateRenderer(bbbMap.focusArea),
-            legendEnabled: 1,
-            visible: 1,
-            /*labelingInfo: [
-                {
-                    labelExpression: `[NAME]`, //$feature.NAME"], labelExpression
-                    symbol: {
-                        type: "text", // autocasts as new TextSymbol()
-                        color: [255, 255, 255, 0.9],
-                        haloSize: 0.0,
-                        haloColor: "white",
-                        font: { size: 9 },
-                    },
-                    deconflictionStrategy: "none",
-                },
-            ],
-            */
-            fields: results.fields,
-            source: results.features,
-        };
-
-        bbbMap.tractShapeLayerSource = layer;
-        console.log("Creating client side feature layer", results.features, layer);
-
-        bbbMap.tractShapeLayer = new bbbMap.esri.FeatureLayer(layer);
-        /*
-        const response = await bbbMap.esri.colorRendererCreator.createContinuousRenderer({
-            layer: bbbMap.tractShapeLayer,
-            field: "RISK_SCORE",
-            view: bbbMap.view,
-            baseMape: bbbMap.map.basemap,
-            theme: "above-and-below",
-            outlineOptimizationEnabled: true,
-        });
-
-        bbbMap.tractShapeLayer.renderer = response.renderer;
-
-        */
-        //        bbbMap.tractShapeLayerView = await bbbMap.map.add(bbbMap.tractShapeLayer);
-        bbbMap.map.add(bbbMap.tractShapeLayer);
-        bbbMap.tractShapeLayerView = await bbbMap.view.whenLayerView(bbbMap.tractShapeLayer);
-
-        bbbMap.tractShapeLayer.queryExtent().then((response) => {
-            bbbMap.view.goTo(response.extent.expand(1.2), bbbMap.goToOptions);
-        });
-
-        bbbMap.view.ui.add(bbbMap.legendContainer, "bottom-right");
-
-        //bbbMap.view.ui.add()
-
-        if (bbbMap.view.popup && bbbMap.view.popup.visible) {
-            bbbMap.view.popup.close();
-        }
-
-        //<calcite-action id="action-with-tooltip" text="Layers" icon="layers" text-enabled></calcite-action>
-        //let btn = "";
-        // if (!document.getElementById("summaryReportBtn")) {
-        const btn = document.createElement("calcite-button");
-        btn.innerHTML = "Summary Report";
-        btn.slot = "actions-end";
-        btn.iconStart = "file-report";
-        btn.round = false;
-        btn.id = "summaryReportBtn";
-
-        //btn.scale = "m";
-        //btn.textEnabled = true;
-        btn.addEventListener("click", (e) => {
-            console.log("Report Button Click", e);
-            bbbMap.getSummaryReport();
-        });
-
-        const resetBtn = document.createElement("calcite-button");
-        resetBtn.innerHTML = "";
-        resetBtn.slot = "actions-end";
-        resetBtn.iconStart = "reset";
-        resetBtn.round = false;
-        resetBtn.id = "summaryReportResetBtn";
-        resetBtn.addEventListener("click", (e) => {
-            console.log("Reset", e);
-            bbbMap.summaryReportReset();
-        });
-
-        const area = bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles");
-        let radius = "";
-        if (!tool) {
-            radius = ` (radius of ${bbbMap.BUFFER_SIZE} miles)`;
-        }
-        //const area = bbbMap.esri.geometryEngine.geodesicArea(geom, 'square-miles');
-        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts within ${bbbMap.Number.format(area)} square miles${radius}.`, [btn, resetBtn]);
-        //}
+        bbbMap.showNearbyBranches(results, geom);
     } catch (e) {
         bbbMap.showAlert("danger", `Error Getting Tracts`, `${e.message}`);
     }
@@ -1011,6 +916,9 @@ bbbMap.ui = function () {
     bbbMap.parameters = document.getElementById("parameters");
     bbbMap.mainPanel = document.getElementById("mainPanel");
     bbbMap.mainPanelContent = document.getElementById("mainPanelContent");
+    bbbMap.filterPanel = document.getElementById("filterPanel");
+    bbbMap.filterContainer = document.getElementById("filterPanelContent");
+
     bbbMap.parameters.style = "display: flex";
 
     bbbMap.view.ui.add(bbbMap.parameters, "top-right");
@@ -1048,8 +956,267 @@ bbbMap.ui = function () {
     });
 
     bbbMap.parameters.prepend(label);
+
+    //Add pre-defined filters
+    let btn = document.createElement("calcite-button");
+    btn.iconStart = "filter";
+    //btn.innerHTML = "Pre-Defined Areas";
+    btn.title = "Use Pre-Defined Areas";
+    btn.addEventListener("click", async (e) => {
+        console.log("Predefined Filters");
+
+        filterPanel.closed = false;
+        let h = document.getElementById("map").clientHeight;
+        h = h - h * 0.1;
+        bbbMap.filterPanel.style.height = `${h}px`;
+        bbbMap.getStates();
+    });
+    bbbMap.view.ui.add(btn, "top-left");
+
+    bbbMap.filterPanel.addEventListener("calcitePanelClose", () => {
+        bbbMap.filterPanel.style.height = "";
+    });
+
+    bbbMap.mainPanel.addEventListener("calcitePanelClose", () => {
+        if (!bbbMap.mainPanelCloseBtn) {
+            bbbMap.mainPanelCloseBtn = document.createElement("calcite-button");
+            bbbMap.mainPanelCloseBtn.iconStart = "information";
+            bbbMap.mainPanelCloseBtn.title = "Census Demographics";
+            bbbMap.mainPanelCloseBtn.addEventListener("click", async (e) => (bbbMap.mainPanel.closed = false));
+            bbbMap.view.ui.add(bbbMap.mainPanelCloseBtn, "top-left");
+        }
+    });
 };
 
+bbbMap.getStates = async function () {
+    if (!bbbMap.stateFilter) {
+        bbbMap.stateFilter = document.createElement("div");
+        bbbMap.stateFilter.innerHTML = "";
+
+        let statisticType = "count";
+        let q = {};
+        q.outStatistics = [
+            {
+                onStatisticField: "STATEFIPS",
+                outStatisticFieldName: statisticType,
+                statisticType: statisticType,
+            },
+        ];
+        q.groupByFieldsForStatistics = ["STATEFIPS", "STATEABBRV", "STATE"];
+
+        console.log("getStates query", q);
+        const results = await bbbMap.censusTractShapeLayer.queryFeatures(q);
+        console.log("getStates results", results);
+
+        //let select = document.createElement("calcite-select");
+        let select = document.createElement("calcite-combobox");
+        select.scale = "s";
+        select.placeholder = "Select a State";
+        select.selectionMode = "single";
+
+        results.features.forEach((feature) => {
+            //let option = document.createElement("calcite-option");
+            let option = document.createElement("calcite-combobox-item");
+
+            option.value = feature.attributes.STATEFIPS;
+            //option.innerHTML = `${feature.attributes.STATE} (${feature.attributes.count} tracts)`;
+            option.textLabel = `${feature.attributes.STATE} (${feature.attributes.count} tracts)`;
+            select.appendChild(option);
+        });
+
+        let label = document.createElement("calcite-label");
+        label.innerHTML = "State";
+        //label.layout = "inline";
+        label.scale = "s";
+        label.appendChild(select);
+
+        //select.addEventListener("calciteSelectChange", async (e) => {
+        select.addEventListener("calciteComboboxChange", (e) => {
+            console.log("State change", e);
+            bbbMap.getCounties(e.target.value);
+        });
+
+        bbbMap.stateFilter.appendChild(label);
+        //return bbbMap.stateFilter;
+        bbbMap.filterContainer.appendChild(bbbMap.stateFilter);
+    }
+};
+
+bbbMap.getCounties = async function (statefips) {
+    if (bbbMap.countyFilter) {
+        bbbMap.countyFilter.innerHTML = "";
+    }
+    bbbMap.countyFilter = document.createElement("div");
+
+    let statisticType = "count";
+    let q = { where: `STATEFIPS='${statefips}'` };
+    q.outStatistics = [
+        {
+            onStatisticField: "COUNTYFIPS",
+            outStatisticFieldName: statisticType,
+            statisticType: statisticType,
+        },
+    ];
+    q.groupByFieldsForStatistics = ["COUNTYFIPS", "COUNTY", "STCOFIPS"];
+
+    console.log("getCounties query", q);
+    const results = await bbbMap.censusTractShapeLayer.queryFeatures(q);
+    console.log("getCounties results", results);
+
+    //let select = document.createElement("calcite-select");
+    let select = document.createElement("calcite-combobox");
+    select.placeholder = "Select one or more Counties";
+    select.selectionMode = "multiple";
+    select.scale = "s";
+
+    results.features.forEach((feature) => {
+        //let option = document.createElement("calcite-option");
+        let option = document.createElement("calcite-combobox-item");
+
+        option.value = feature.attributes.STCOFIPS;
+        option.textLabel = `${feature.attributes.COUNTY} (${feature.attributes.count} tracts)`;
+
+        select.appendChild(option);
+    });
+
+    let label = document.createElement("calcite-label");
+    label.innerHTML = "Counties";
+    label.scale = "s";
+    label.appendChild(select);
+
+    select.addEventListener("calciteComboboxChange", async (e) => {
+        console.log("CountySelect change", e);
+        bbbMap.applyFilter(e.target.value);
+    });
+
+    bbbMap.countyFilter.appendChild(label);
+    bbbMap.filterContainer.appendChild(bbbMap.countyFilter);
+};
+
+bbbMap.applyFilter = async function (counties) {
+    console.log("applyFilter", counties);
+
+    bbbMap.summaryReportModal = "";
+
+    if (counties) {
+        const c = typeof counties === "string" ? [counties] : counties;
+        let str = c.join(`','`);
+        str = `'${str}'`;
+
+        if (bbbMap?.tractShapeLayer) {
+            bbbMap?.tractShapeLayer.destroy();
+        }
+
+        const q = {
+            where: `STCOFIPS in (${str})`,
+            outFields: ["*"],
+            returnGeometry: true,
+            returnCentroid: true,
+        };
+
+        console.log("applyFilter Query", q);
+        const results = await bbbMap.censusTractShapeLayer.queryFeatures(q);
+        //const results = await bbbMap.tractLayerView.queryFeatures(q);
+
+        console.log("applyFilter results", results);
+        if (results.features.length === 0) {
+            throw new Error("Unable to find a census tract for this filter");
+        }
+
+        bbbMap.showNearbyBranches(results);
+    }
+};
+
+bbbMap.showNearbyBranches = async function (results, geom) {
+    console.log("showNearbyBranches", results, geom);
+    try {
+        let layer = {
+            id: "tractShapes",
+            title: "Census Tract Shapes",
+            opacity: 0.75,
+            outFields: ["*"],
+            popupEnabled: 1,
+            popupTemplate: bbbMap.getPopupTemplate(),
+            //renderer: { type: "simple", symbol: { type: "simple-fill", color: [183, 172, 131, 0.5], outline: { color: [255, 255, 255, 0.75], width: 0.1 } } },
+            renderer: bbbMap.getClimateRenderer(bbbMap.focusArea),
+            legendEnabled: 1,
+            visible: 1,
+            /*labelingInfo: [
+                {
+                    labelExpression: `[NAME]`, //$feature.NAME"], labelExpression
+                    symbol: {
+                        type: "text", // autocasts as new TextSymbol()
+                        color: [255, 255, 255, 0.9],
+                        haloSize: 0.0,
+                        haloColor: "white",
+                        font: { size: 9 },
+                    },
+                    deconflictionStrategy: "none",
+                },
+            ],
+            */
+            fields: results.fields,
+            source: results.features,
+        };
+
+        bbbMap.tractShapeLayerSource = layer;
+        console.log("Creating client side feature layer", results.features, layer);
+
+        bbbMap.tractShapeLayer = new bbbMap.esri.FeatureLayer(layer);
+        bbbMap.map.add(bbbMap.tractShapeLayer);
+        bbbMap.tractShapeLayerView = await bbbMap.view.whenLayerView(bbbMap.tractShapeLayer);
+
+        bbbMap.tractShapeLayer.queryExtent().then((response) => {
+            bbbMap.view.goTo(response.extent.expand(1.2), bbbMap.goToOptions);
+        });
+
+        bbbMap.view.ui.add(bbbMap.legendContainer, "bottom-right");
+
+        if (bbbMap.view.popup && bbbMap.view.popup.visible) {
+            bbbMap.view.popup.close();
+        }
+
+        const btn = document.createElement("calcite-button");
+        btn.innerHTML = "Summary Report";
+        btn.slot = "actions-end";
+        btn.iconStart = "file-report";
+        btn.round = false;
+        btn.id = "summaryReportBtn";
+
+        //btn.scale = "m";
+        //btn.textEnabled = true;
+        btn.addEventListener("click", (e) => {
+            console.log("Report Button Click", e);
+            bbbMap.getSummaryReport();
+        });
+
+        const resetBtn = document.createElement("calcite-button");
+        resetBtn.innerHTML = "";
+        resetBtn.slot = "actions-end";
+        resetBtn.iconStart = "reset";
+        resetBtn.round = false;
+        resetBtn.id = "summaryReportResetBtn";
+        resetBtn.addEventListener("click", (e) => {
+            console.log("Reset", e);
+            bbbMap.summaryReportReset();
+        });
+
+        let areaText = "";
+        if (geom) {
+            let area = geom ? bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles") : "";
+            areaText = `within ${bbbMap.Number.format(area)} square miles`;
+        }
+        //let radius = "";
+        //if (!tool) {
+        //radius = ` (radius of ${bbbMap.BUFFER_SIZE} miles)`;
+        //} //${radius}
+        //const area = bbbMap.esri.geometryEngine.geodesicArea(geom, 'square-miles');
+        bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts ${areaText}.`, [btn, resetBtn]);
+        //}
+    } catch (e) {
+        bbbMap.showAlert("danger", `Error Showing Tracts`, `${e.message}`);
+    }
+};
 bbbMap.getPopupTemplate = function () {
     //let a = bbbMap.climateDictionary.find((c) => c.name === bbbMap.focusArea);
     let a = bbbMap.getDictionary();
