@@ -1400,8 +1400,8 @@ bbbMap.buildHistogram = async function (area = bbbMap.focusArea) {
     if (bbbMap.tractShapeLayerView) {
         if (bbbMap.histogramContainer) {
             bbbMap.view.ui.remove(bbbMap.histogramContainer);
-            bbbMap.histogramContainer = "";
         }
+
         bbbMap.tractShapeLayerView.filter = "";
         let dict = bbbMap.getDictionary();
         let score = dict.type === "hazard" ? "RISKS" : "SCORE";
@@ -1414,6 +1414,8 @@ bbbMap.buildHistogram = async function (area = bbbMap.focusArea) {
             numBins: 50,
             minValue: 0,
             maxValue: 100,
+            //classificationMethod: "standard-deviation", //"equal-interval","natural-breaks","quantile","standard-deviation"
+            //normalizationType: "natural-log", //"field", "log", "percent-of-total", "natural-log", "square-root"
         });
 
         console.log("histogram results", results);
