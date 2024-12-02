@@ -878,6 +878,7 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
 
         bbbMap.showNearbyTracts(results, geom);
     } catch (e) {
+        bbbMap.bodyScrim.hidden = true;
         bbbMap.showAlert("danger", `Error Getting Tracts`, `${e.message}`);
     }
 };
