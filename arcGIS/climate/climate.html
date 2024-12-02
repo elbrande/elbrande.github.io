@@ -43,6 +43,11 @@
                 grid-gap: 1rem;
                 justify-content: space-evenly;
             }
+
+            calcite-scrim {
+                --calcite-scrim-background: rgba(153, 153, 153, 0.05);
+                color: white;
+            }
         </style>
     </head>
     <body class="calcite-mode-dark">
@@ -119,6 +124,8 @@
             <div id="successTitle" slot="title">Success</div>
             <div id="successMsg" slot="message">Success Message</div>
         </calcite-alert>
+
+        <calcite-scrim id="bodyScrim" loading hidden>Getting Tracts...</calcite-scrim>
     </body>
 </html>
 <!--

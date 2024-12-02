@@ -5,6 +5,7 @@ bbbMap.init = () => {
     bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
     //bbbMap.censusTractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Median_Income_by_Race_and_Age_Selp_Emp_Boundaries/FeatureServer/2";
     bbbMap.censusTractService = "https://services.arcgis.com/XG15cJAlne2vxtgt/ArcGIS/rest/services/National_Risk_Index_Census_Tracts/FeatureServer/0";
+    bbbMap.cbsaService = "https://services1.arcgis.com/HLC8bAygObK4fhPW/ArcGIS/rest/services/Core_based_statistical_area_for_the_US_July_2023/FeatureServer/2";
     bbbMap.goToOptions = { animate: true, animationMode: "auto", duration: 1000, maxDuration: 2000, easing: "ease" };
     bbbMap.initMap();
 };
@@ -74,6 +75,7 @@ bbbMap.initMap = () => {
 
             console.log("referencing shape service, but not adding to map");
             bbbMap.censusTractShapeLayer = new FeatureLayer({ id: "censusTractService", url: bbbMap.censusTractService });
+            bbbMap.cbsaShapeLayer = new FeatureLayer({ id: "cbsaService", url: bbbMap.cbsaService });
             //bbbMap.map.add(bbbMap.censusTractShapeLayer);
 
             bbbMap.view.on("immediate-click", async (e) => {
@@ -401,10 +403,8 @@ bbbMap.getTractGeom = async function (geoid) {
 
     console.log("getTractGeom results", results);
     return results;
-    //if (results.features.length > 0) {
-    //return results.features[0];
-    //}
 };
+
 bbbMap.buildSummaryReportCharts = function (data, type, title = "Chart", xLabel = "", yLabel = "", enableClick = false) {
     console.log("buildSummaryReportCharts");
     // let data = bbbMap?.tractShapeLayerSource?.source;
@@ -837,6 +837,7 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
     console.log("getNearbyTracts", feature, tool);
     let point, geom;
     bbbMap.summaryReportModal = "";
+    bbbMap.bodyScrim.hidden = false;
     try {
         if (bbbMap?.tractShapeLayer) {
             bbbMap?.tractShapeLayer.destroy();
@@ -873,7 +874,7 @@ bbbMap.getNearbyTracts = async function (feature, tool) {
             throw new Error("Unable to find a census tract for this location");
         }
 
-        bbbMap.showNearbyBranches(results, geom);
+        bbbMap.showNearbyTracts(results, geom);
     } catch (e) {
         bbbMap.showAlert("danger", `Error Getting Tracts`, `${e.message}`);
     }
@@ -918,6 +919,7 @@ bbbMap.ui = function () {
     bbbMap.mainPanelContent = document.getElementById("mainPanelContent");
     bbbMap.filterPanel = document.getElementById("filterPanel");
     bbbMap.filterContainer = document.getElementById("filterPanelContent");
+    bbbMap.bodyScrim = document.getElementById("bodyScrim");
 
     bbbMap.parameters.style = "display: flex";
 
@@ -969,7 +971,37 @@ bbbMap.ui = function () {
         let h = document.getElementById("map").clientHeight;
         h = h - h * 0.1;
         bbbMap.filterPanel.style.height = `${h}px`;
-        bbbMap.getStates();
+
+        if (!bbbMap.filterTypeSelect) {
+            bbbMap.filterTypeSelect = document.createElement("calcite-select");
+            bbbMap.filterTypeSelect.scale = "s";
+            let types = [
+                { name: "-Select a Type-", value: "0", fxn: "" },
+                { name: "States and Counties", value: "states", fxn: bbbMap.getStates },
+                { name: "MSA and Counties", value: "msa", fxn: bbbMap.getCBSA },
+            ];
+            types.forEach((t) => {
+                const option = document.createElement("calcite-option");
+                option.value = t.value;
+                option.innerText = t.name;
+
+                bbbMap.filterTypeSelect.appendChild(option);
+            });
+            bbbMap.filterTypeSelect.addEventListener("calciteSelectChange", (e) => {
+                console.log("Changing Filter Type", e, types);
+                let t = types.find((t) => t.value === e.target.value);
+                console.log("Changing Filter Type t", t);
+                if (t && t.fxn) {
+                    t.fxn();
+                }
+            });
+            const label = document.createElement("calcite-label");
+            label.innerHTML = "Filter Type";
+            label.scale = "s";
+            label.appendChild(bbbMap.filterTypeSelect);
+            bbbMap.filterContainer.appendChild(label);
+        }
+        //bbbMap.getStates();
     });
     bbbMap.view.ui.add(btn, "top-left");
 
@@ -988,9 +1020,144 @@ bbbMap.ui = function () {
     });
 };
 
+bbbMap.getCBSA = async function () {
+    console.log("getCBSA");
+    if (bbbMap.stateFilter) {
+        bbbMap.filterContainer.removeChild(bbbMap.stateFilter);
+    }
+
+    if (!bbbMap.cbsaFilter) {
+        bbbMap.cbsaFilter = document.createElement("div");
+
+        bbbMap.cbsaFilter.innerHTML = "";
+
+        let statisticType = "count";
+        let q = { where: `CBSATYPE='Metropolitan Statistical Area'` };
+        q.outStatistics = [
+            {
+                onStatisticField: "CBSACODE",
+                outStatisticFieldName: statisticType,
+                statisticType: statisticType,
+            },
+        ];
+        q.groupByFieldsForStatistics = ["CBSACODE", "CBSANAME"];
+
+        console.log("getCBSA query", q);
+        const results = await bbbMap.cbsaShapeLayer.queryFeatures(q);
+        console.log("getCBSA results", results);
+
+        //let select = document.createElement("calcite-select");
+        let select = document.createElement("calcite-combobox");
+        select.scale = "s";
+        select.placeholder = "Select an MSA";
+        select.selectionMode = "single";
+
+        results.features.forEach((feature) => {
+            //let option = document.createElement("calcite-option");
+            let option = document.createElement("calcite-combobox-item");
+
+            option.value = feature.attributes.CBSACODE;
+            //option.innerHTML = `${feature.attributes.STATE} (${feature.attributes.count} tracts)`;
+            option.textLabel = `${feature.attributes.CBSANAME} (${feature.attributes.count} Counties)`;
+            select.appendChild(option);
+        });
+
+        let label = document.createElement("calcite-label");
+        label.innerHTML = "MSA";
+        //label.layout = "inline";
+        label.scale = "s";
+        label.appendChild(select);
+
+        //select.addEventListener("calciteSelectChange", async (e) => {
+        select.addEventListener("calciteComboboxChange", (e) => {
+            console.log("MSA change", e);
+            bbbMap.getCBSACounties(e.target.value);
+        });
+
+        bbbMap.cbsaFilter.appendChild(label);
+        //return bbbMap.stateFilter;
+        //bbbMap.filterContainer.appendChild(bbbMap.stateFilter);
+    }
+    bbbMap.filterContainer.appendChild(bbbMap.cbsaFilter);
+};
+
+bbbMap.getCBSACounties = async function (msacode) {
+    if (bbbMap.countyCBSAFilter) {
+        bbbMap.countyCBSAFilter.innerHTML = "";
+    }
+    bbbMap.countyCBSAFilter = document.createElement("div");
+
+    let statisticType = "count";
+    let q = { where: `CBSACODE='${msacode}'` };
+    q.outStatistics = [
+        {
+            onStatisticField: "COUNTYFP",
+            outStatisticFieldName: statisticType,
+            statisticType: statisticType,
+        },
+    ];
+    q.groupByFieldsForStatistics = ["COUNTYFP", "CNTY_NAME", "GEOID"];
+
+    console.log("getMSACounties query", q);
+    const results = await bbbMap.cbsaShapeLayer.queryFeatures(q);
+    console.log("getMSACounties results", results);
+
+    //let select = document.createElement("calcite-select");
+    let select = document.createElement("calcite-combobox");
+    select.placeholder = "Select one or more Counties";
+    select.selectionMode = "multiple";
+    select.scale = "s";
+
+    results.features.forEach((feature) => {
+        //let option = document.createElement("calcite-option");
+        let option = document.createElement("calcite-combobox-item");
+
+        option.value = feature.attributes.GEOID;
+        option.textLabel = `${feature.attributes.CNTY_NAME}`;
+
+        select.appendChild(option);
+    });
+
+    let label = document.createElement("calcite-label");
+    label.innerHTML = "Counties";
+    label.scale = "s";
+    label.appendChild(select);
+
+    select.addEventListener("calciteComboboxChange", async (e) => {
+        console.log("CountySelect change", e);
+        bbbMap.applyFilter(e.target.value);
+    });
+
+    bbbMap.countyCBSAFilter.appendChild(label);
+
+    const c = bbbMap.countyCBSAFilter.querySelector("calcite-combobox");
+    const items = c.querySelectorAll("calcite-combobox-item");
+
+    const allBtn = document.createElement("calcite-button");
+    allBtn.innerHTML = "All";
+    allBtn.addEventListener("click", (e) => {
+        items.forEach((i) => (i.selected = true));
+    });
+
+    const noneBtn = document.createElement("calcite-button");
+    noneBtn.innerHTML = "None";
+    noneBtn.addEventListener("click", (e) => {
+        items.forEach((i) => (i.selected = false));
+    });
+
+    bbbMap.countyCBSAFilter.appendChild(allBtn);
+    bbbMap.countyCBSAFilter.appendChild(noneBtn);
+    bbbMap.cbsaFilter.appendChild(bbbMap.countyCBSAFilter);
+};
+
 bbbMap.getStates = async function () {
+    if (bbbMap.cbsaFilter) {
+        bbbMap.filterContainer.removeChild(bbbMap.cbsaFilter);
+    }
+
     if (!bbbMap.stateFilter) {
         bbbMap.stateFilter = document.createElement("div");
+
         bbbMap.stateFilter.innerHTML = "";
 
         let statisticType = "count";
@@ -1038,8 +1205,10 @@ bbbMap.getStates = async function () {
 
         bbbMap.stateFilter.appendChild(label);
         //return bbbMap.stateFilter;
-        bbbMap.filterContainer.appendChild(bbbMap.stateFilter);
+        //bbbMap.filterContainer.appendChild(bbbMap.stateFilter);
     }
+
+    bbbMap.filterContainer.appendChild(bbbMap.stateFilter);
 };
 
 bbbMap.getCounties = async function (statefips) {
@@ -1090,18 +1259,19 @@ bbbMap.getCounties = async function (statefips) {
     });
 
     bbbMap.countyFilter.appendChild(label);
-    bbbMap.filterContainer.appendChild(bbbMap.countyFilter);
+    bbbMap.stateFilter.appendChild(bbbMap.countyFilter);
 };
 
 bbbMap.applyFilter = async function (counties) {
     console.log("applyFilter", counties);
-
     bbbMap.summaryReportModal = "";
 
     if (counties) {
+        bbbMap.bodyScrim.hidden = false;
         const c = typeof counties === "string" ? [counties] : counties;
         let str = c.join(`','`);
         str = `'${str}'`;
+        console.log("applyFilter str", str);
 
         if (bbbMap?.tractShapeLayer) {
             bbbMap?.tractShapeLayer.destroy();
@@ -1123,12 +1293,12 @@ bbbMap.applyFilter = async function (counties) {
             throw new Error("Unable to find a census tract for this filter");
         }
 
-        bbbMap.showNearbyBranches(results);
+        bbbMap.showNearbyTracts(results);
     }
 };
 
-bbbMap.showNearbyBranches = async function (results, geom) {
-    console.log("showNearbyBranches", results, geom);
+bbbMap.showNearbyTracts = async function (results, geom) {
+    console.log("showNearbyTracts", results, geom);
     try {
         let layer = {
             id: "tractShapes",
@@ -1211,10 +1381,13 @@ bbbMap.showNearbyBranches = async function (results, geom) {
         //radius = ` (radius of ${bbbMap.BUFFER_SIZE} miles)`;
         //} //${radius}
         //const area = bbbMap.esri.geometryEngine.geodesicArea(geom, 'square-miles');
+
         bbbMap.showAlert("success", `Success`, `Found ${results.features.length} tracts ${areaText}.`, [btn, resetBtn]);
         //}
     } catch (e) {
         bbbMap.showAlert("danger", `Error Showing Tracts`, `${e.message}`);
+    } finally {
+        bbbMap.bodyScrim.hidden = true;
     }
 };
 bbbMap.getPopupTemplate = function () {
