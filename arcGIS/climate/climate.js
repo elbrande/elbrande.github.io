@@ -11,7 +11,7 @@ bbbMap.init = () => {
 };
 
 bbbMap.initMap = () => {
-    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color", "esri/PopupTemplate", "esri/geometry/operators/labelPointOperator"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator, PopupTemplate, labelPointOperator) =>
+    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color", "esri/PopupTemplate", "esri/geometry/operators/labelPointOperator", "esri/widgets/HistogramRangeSlider", "esri/smartMapping/statistics/histogram"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator, PopupTemplate, labelPointOperator, HistogramRangeSlider, histogram) =>
         (async () => {
             esriConfig.apiKey = bbbMap.apiKey;
 
@@ -27,6 +27,8 @@ bbbMap.initMap = () => {
             bbbMap.esri.colorRendererCreator = colorRendererCreator;
             bbbMap.esri.PopupTemplate = PopupTemplate;
             bbbMap.esri.labelPointOperator = labelPointOperator;
+            bbbMap.esri.HistogramRangeSlider = HistogramRangeSlider;
+            bbbMap.esri.histogram = histogram;
 
             console.log("Building Map");
 
@@ -948,6 +950,7 @@ bbbMap.ui = function () {
     select.addEventListener("calciteSelectChange", (e) => {
         console.log("climate hazard change", e);
         bbbMap.focusArea = e.target.value;
+        bbbMap.buildHistogram(bbbMap.focusArea);
         let renderer = bbbMap.getClimateRenderer(bbbMap.focusArea);
         let layer = bbbMap.map.findLayerById("tractShapes");
         if (layer && renderer) {
@@ -1336,6 +1339,8 @@ bbbMap.showNearbyTracts = async function (results, geom) {
         bbbMap.map.add(bbbMap.tractShapeLayer);
         bbbMap.tractShapeLayerView = await bbbMap.view.whenLayerView(bbbMap.tractShapeLayer);
 
+        bbbMap.buildHistogram();
+
         bbbMap.tractShapeLayer.queryExtent().then((response) => {
             bbbMap.view.goTo(response.extent.expand(1.2), bbbMap.goToOptions);
         });
@@ -1390,6 +1395,55 @@ bbbMap.showNearbyTracts = async function (results, geom) {
         bbbMap.bodyScrim.hidden = true;
     }
 };
+
+bbbMap.buildHistogram = async function (area = bbbMap.focusArea) {
+    if (bbbMap.tractShapeLayerView) {
+        if (bbbMap.histogramContainer) {
+            bbbMap.view.ui.remove(bbbMap.histogramContainer);
+            bbbMap.histogramContainer = "";
+        }
+        bbbMap.tractShapeLayerView.filter = "";
+        let dict = bbbMap.getDictionary();
+        let score = dict.type === "hazard" ? "RISKS" : "SCORE";
+        //let field = dict.legendField;
+        let field = `${area}_${score}`;
+
+        results = await bbbMap.esri.histogram({
+            layer: bbbMap.tractShapeLayer,
+            field: field,
+            numBins: 50,
+            minValue: 0,
+            maxValue: 100,
+        });
+
+        console.log("histogram results", results);
+
+        bbbMap.histogramContainer = document.createElement("div");
+        bbbMap.histogramContainer.innerHTML = `Histogram for ${dict.alias}`;
+        const sliderContainer = document.createElement("div");
+
+        const slider = new bbbMap.esri.HistogramRangeSlider({
+            bins: results.bins,
+            min: 0,
+            max: 100,
+            values: [0, 100],
+            excludedBarColor: "#524e4e",
+            rangeType: "between",
+            container: sliderContainer,
+        });
+
+        slider.on(["thumb-change", "thumb-drag", "segment-drag"], (event) => {
+            let where = slider.generateWhereClause(field);
+            //console.log("where", where);
+            bbbMap.tractShapeLayerView.filter = {
+                where: where,
+            };
+        });
+        bbbMap.histogramContainer.appendChild(sliderContainer);
+        bbbMap.view.ui.add(bbbMap.histogramContainer, "bottom-left");
+    }
+};
+
 bbbMap.getPopupTemplate = function () {
     //let a = bbbMap.climateDictionary.find((c) => c.name === bbbMap.focusArea);
     let a = bbbMap.getDictionary();
