@@ -1020,7 +1020,7 @@ bbbMap.ui = function () {
     });
 };
 
-bbbMap.getCBSA = async function () {
+bbbMap.getCBSA = async function (cbsaType = "Metropolitan Statistical Area") {
     console.log("getCBSA");
     if (bbbMap.stateFilter) {
         bbbMap.filterContainer.removeChild(bbbMap.stateFilter);
@@ -1032,7 +1032,7 @@ bbbMap.getCBSA = async function () {
         bbbMap.cbsaFilter.innerHTML = "";
 
         let statisticType = "count";
-        let q = { where: `CBSATYPE='Metropolitan Statistical Area'` };
+        let q = { where: `CBSATYPE='${cbsaType}'` };
         q.outStatistics = [
             {
                 onStatisticField: "CBSACODE",
