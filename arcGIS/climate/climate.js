@@ -957,7 +957,9 @@ bbbMap.ui = function () {
         if (layer && renderer) {
             layer.renderer = renderer;
             //layer.popupTemplate = bbbMap.updatePopupTemplate();
-            bbbMap.view.openPopup(bbbMap.updatePopupTemplate());
+            if (bbbMap.view.popup.active) {
+                bbbMap.view.openPopup(bbbMap.updatePopupTemplate());
+            }
         }
     });
 
