@@ -1,7 +1,7 @@
-const bbbMap = {};
+const bbbMap = { version: "1.2.0" };
 //https://www.arcgis.com/home/item.html?id=9da4eeb936544335a6db0cd7a8448a51
 bbbMap.init = () => {
-    console.log("bbbMap.init");
+    console.log(`Climate Map Version: ${bbbMap.version}`);
     bbbMap.apiKey = "AAPK0cd2f0f32a494df3ae6c449ac67faabbfaPt0C5s0X6EPcaWH0P-2j_6PUAOrvcB2sERatzoXpK7Cc_z7F5JL40rCzTiDPLT";
     //bbbMap.censusTractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Median_Income_by_Race_and_Age_Selp_Emp_Boundaries/FeatureServer/2";
     bbbMap.censusTractService = "https://services.arcgis.com/XG15cJAlne2vxtgt/ArcGIS/rest/services/National_Risk_Index_Census_Tracts/FeatureServer/0";
@@ -11,7 +11,7 @@ bbbMap.init = () => {
 };
 
 bbbMap.initMap = () => {
-    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color", "esri/PopupTemplate", "esri/geometry/operators/labelPointOperator", "esri/widgets/HistogramRangeSlider", "esri/smartMapping/statistics/histogram", "esri/smartMapping/statistics/summaryStatistics"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator, PopupTemplate, labelPointOperator, HistogramRangeSlider, histogram, summaryStatistics) =>
+    require(["esri/config", "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/FeatureTable", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/BasemapGallery", "esri/widgets/LayerList", "esri/widgets/Legend", "esri/widgets/Print", "esri/widgets/Search", "esri/core/reactiveUtils", "esri/geometry/geometryEngine", "esri/geometry/support/webMercatorUtils", "esri/geometry/Point", "esri/widgets/Sketch", "esri/smartMapping/renderers/color", "esri/PopupTemplate", "esri/geometry/operators/labelPointOperator", "esri/widgets/HistogramRangeSlider", "esri/smartMapping/statistics/histogram", "esri/smartMapping/statistics/summaryStatistics", "esri/widgets/Expand"], (esriConfig, Map, MapView, FeatureLayer, FeatureTable, GraphicsLayer, Graphic, BasemapGallery, LayerList, Legend, Print, Search, reactiveUtils, geometryEngine, webMercatorUtils, Point, Sketch, colorRendererCreator, PopupTemplate, labelPointOperator, HistogramRangeSlider, histogram, summaryStatistics, Expand) =>
         (async () => {
             esriConfig.apiKey = bbbMap.apiKey;
 
@@ -30,6 +30,7 @@ bbbMap.initMap = () => {
             bbbMap.esri.HistogramRangeSlider = HistogramRangeSlider;
             bbbMap.esri.histogram = histogram;
             bbbMap.esri.summaryStatistics = summaryStatistics;
+            bbbMap.esri.Expand = Expand;
 
             console.log("Building Map");
 
@@ -235,161 +236,13 @@ bbbMap.finishSketch = function (graphic, tool) {
         }
     }
 };
+
 bbbMap.getBlock = function (title, collapsible = true, open = true) {
     const block = document.createElement("calcite-block");
     block.heading = title;
     block.open = open;
     block.collapsible = collapsible;
     return block;
-};
-bbbMap.buildGroupByTables = function (data, config) {
-    console.log("buildGroupByTables", data, config);
-    const d = bbbMap.getSumByGroup(config.groupBy, data, config.sumAttr);
-    const sortedData = Object.entries(d).sort((a, b) => b[1] - a[1]);
-
-    const block = bbbMap.getBlock(config.title);
-    const table = bbbMap.getTable(true, false);
-
-    sortedData.forEach((d) => {
-        table.appendChild(bbbMap.addRow(d[0], bbbMap[config.format].format(d[1])));
-    });
-    block.appendChild(table);
-    return block;
-};
-bbbMap.getSumByGroup = function (groupBy, data = bbbMap?.tractShapeLayerSource?.source, sumAttr = "") {
-    console.log("xxxgetSumByGroup", groupBy, data, sumAttr);
-    let rtn = "";
-    try {
-        if (data) {
-            rtn = data.reduce((acc, item) => {
-                if (!acc[item.attributes[groupBy]]) {
-                    acc[item.attributes[groupBy]] = 0;
-                }
-
-                if (sumAttr) {
-                    acc[item.attributes[groupBy]] += item.attributes[sumAttr];
-                } else {
-                    acc[item.attributes[groupBy]] += 1;
-                }
-                return acc;
-            }, {});
-        }
-    } catch (e) {
-        console.log("Error getting getSumByGroup", e, groupBy, data, sumAttr);
-    }
-    return rtn;
-};
-bbbMap.getSum = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
-    let rtn = "";
-    try {
-        if (data) {
-            rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0);
-        }
-    } catch (e) {
-        console.log("Error getting Sum", e, attr);
-    }
-    return rtn;
-};
-
-bbbMap.getAvg = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
-    let rtn = "";
-    try {
-        if (data) {
-            let d = data.map((f) => f.attributes[attr]);
-            d = d.filter((d) => !isNaN(d) && d > 0);
-            //rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0) / data.length;
-            rtn = d.reduce((sum, item) => sum + item, 0) / data.length;
-        }
-    } catch (e) {
-        console.log("Error getting Avg", e, attr);
-    }
-    return rtn;
-};
-
-bbbMap.getMin = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
-    let rtn = "";
-    try {
-        if (data) {
-            rtn = data.reduce((min, item) => (item.attributes[attr] < min ? item.attributes[attr] : min), Infinity);
-        }
-    } catch (e) {
-        console.log("Error getting Min", e);
-    }
-    return rtn;
-};
-
-bbbMap.getMax = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
-    let rtn = "";
-    try {
-        if (data) {
-            rtn = data.reduce((max, item) => (item.attributes[attr] > max ? item.attributes[attr] : max), -Infinity);
-        }
-    } catch (e) {
-        console.log("Error getting Max", e);
-    }
-    return rtn;
-};
-
-bbbMap.applyFxn = function (fxn, attr, data) {
-    return fxn(attr, data);
-};
-
-bbbMap.buildSummaryReportContent = function (data) {
-    //build report struture
-    const climateBlock = bbbMap.getBlock("Climate");
-    const container = document.createElement("div");
-    container.classList.add("searchCardContainer");
-
-    let summaryReport = [];
-    ["eal", "nri", "sovi", "cr"].forEach((g) => {
-        console.log("group", g);
-        let category = bbbMap.climateCols[g];
-        if (category) {
-            let reportGroups = category.filter((t) => t?.report);
-            console.log("report groups", reportGroups);
-            reportGroups.forEach((rg) => {
-                summaryReport.push(rg);
-            });
-        }
-    });
-
-    console.log("summaryReport", summaryReport);
-    summaryReport.forEach((g, i) => {
-        console.log("Report group", g);
-
-        const block = bbbMap.getBlock(g?.reportName);
-        //block.style = "width: 30%";
-        const table = bbbMap.getTable(true, false);
-        table.layout = "fixed";
-
-        g.report.forEach((e) => {
-            //console.log("Report", e);
-            let val = bbbMap.applyFxn(e.fxn, g.name, data);
-            let title = e.title;
-            //console.log("here we go", val, title);
-            table.appendChild(bbbMap.addRow(title, bbbMap[g.type].format(val)));
-        });
-        block.appendChild(table);
-        container.appendChild(block);
-    });
-
-    climateBlock.appendChild(container);
-
-    const groupByContainer = document.createElement("div");
-    groupByContainer.classList.add("searchCardContainer");
-
-    const groupByConfig = [
-        { title: "Risk Rating", groupBy: "RISK_RATNG", sumAttr: "", format: "Number" },
-        { title: "Social Vulnerability Rating", groupBy: "SOVI_RATNG", sumAttr: "", format: "Number" },
-        { title: "Community Resiliance Rating", groupBy: "RESL_RATNG", sumAttr: "", format: "Number" },
-    ];
-    groupByConfig.forEach((b) => {
-        const block = bbbMap.buildGroupByTables(data, b);
-        groupByContainer.appendChild(block);
-    });
-    climateBlock.appendChild(groupByContainer);
-
-    return climateBlock;
 };
 
 bbbMap.getTractGeom = async function (geoid) {
@@ -406,251 +259,6 @@ bbbMap.getTractGeom = async function (geoid) {
 
     console.log("getTractGeom results", results);
     return results;
-};
-
-bbbMap.getChart = function (data, type, title = "Chart", xLabel = "", yLabel = "", enableClick = false) {
-    console.log("getChart");
-    // let data = bbbMap?.tractShapeLayerSource?.source;
-    const block = document.createElement("calcite-block");
-    block.heading = title;
-    block.open = true;
-    block.collapsible = true;
-
-    const container = document.createElement("div");
-    container.style.width = "100%";
-    container.style.height = type === "line" || type === "bar" ? "350px" : "100%";
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    //canvas.width = "300";
-    //canvas.height = "200";
-    container.appendChild(canvas);
-    block.appendChild(container);
-    console.log("canvas", container, canvas);
-
-    //let labels = data.map((d) => d.attributes.TRACT);
-    //let risk_score = data.map((d) => d.attributes.RISK_SCORE);
-    let scales =
-        type === "radar"
-            ? { r: { pointLabels: { color: "white", font: { size: 9 } }, ticks: { color: "red", display: false }, grid: { color: "rgba(255, 255, 255, 0.3)" }, angleLines: { color: "rgba(255, 255, 255, 0.3)" } } }
-            : {
-                  x: { title: { display: true, text: xLabel } },
-                  y: { title: { display: true, text: yLabel } },
-                  //r: { pointLabels: { font: { size: 9 } }, ticks: {color: "red", display: false } },
-              };
-
-    const chart = new Chart(ctx, {
-        type: type,
-        data: data,
-        options: {
-            scales: scales,
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                tooltip: {
-                    enabled: true,
-                },
-                legend: {
-                    display: true,
-                },
-            },
-            onClick: async (event, elements) => {
-                console.log("click".event, elements, data, this);
-                if (enableClick) {
-                    if (elements && elements.length > 0) {
-                        const point = elements[0];
-                        const label = data.labels[point.index];
-                        const value = data.datasets[point.datasetIndex].data[point.index];
-
-                        console.log("click", point, label, value);
-
-                        let results = await bbbMap.getTractGeom(label);
-
-                        let geoid = label;
-                        let q = { where: `TRACTFIPS = '${geoid}'` };
-
-                        bbbMap.tractShapeLayerView.featureEffect = {
-                            filter: q,
-                            excludedEffect: "grayscale(50%) opacity(33%)",
-                            includedEffect: " opacity(90%)", //bloom(1.5, 0.5px, 0.1)
-                        };
-                        bbbMap.sketchLayer.removeAll();
-
-                        bbbMap.summaryReportModal.open = false;
-                        bbbMap.view.goTo(results.features[0].geometry.extent.expand(1.5), bbbMap.goToOptions);
-                    }
-                }
-            },
-        },
-    });
-    //}, 100);
-    return block;
-};
-
-bbbMap.chartClick = async function (event, elements) {};
-
-bbbMap.summaryReportReset = function () {
-    bbbMap.tractShapeLayerView.featureEffect = "";
-};
-
-bbbMap.buildSummaryReportHeader = function (data) {
-    let tracts = data.length;
-    let area = bbbMap.getSum("AREA");
-    let counties = [...new Set(data.map((i) => `${i.attributes.COUNTY}, ${i.attributes.STATE}`))];
-    let countyTxt = counties.join("; ");
-    const headerDiv = document.createElement("div");
-    headerDiv.innerHTML = `<h3>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<BR>Area ${bbbMap.Number.format(area)} square miles</h3>`;
-    bbbMap.summaryReportModal.appendChild(headerDiv);
-    return headerDiv;
-};
-
-bbbMap.getSummaryReport = async function () {
-    console.log("getSummaryReport");
-
-    //if it's already built, and the filter is the same, just open the modal
-    if (bbbMap.summaryReportModal && bbbMap.histogramWhere === bbbMap.histogramWhereOld) {
-        bbbMap.summaryReportModal.open = true;
-    } else {
-        //otherwise, build the report
-        bbbMap.summaryReportModal = document.createElement("calcite-dialog");
-
-        bbbMap.summaryReportModal.modal = true;
-        bbbMap.summaryReportModal.open = true;
-        bbbMap.summaryReportModal.heading = "Area Summary Report";
-        bbbMap.summaryReportModal.slot = "dialogs";
-
-        //modal.scale = "l";
-        bbbMap.summaryReportModal.widthScale = "l";
-
-        //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
-        //let data = bbbMap.tractShapeLayerSource.source;
-        const results = await bbbMap.tractShapeLayer.queryFeatures({ where: bbbMap.histogramWhere });
-        const data = results.features;
-
-        console.log("getSummary", results, data);
-        //Header
-        const header = bbbMap.buildSummaryReportHeader(data);
-        bbbMap.summaryReportModal.appendChild(header);
-
-        //Content
-        const content = bbbMap.buildSummaryReportContent(data);
-        bbbMap.summaryReportModal.appendChild(content);
-
-        //Charts
-        let chartData = data.map((d) => {
-            return { label: d.attributes.TRACTFIPS, x: d.attributes.RISK_SCORE, y: d.attributes.SOVI_SCORE, eal: d.attributes.EAL_SCORE };
-        });
-
-        chartData.sort((a, b) => a.x - b.x);
-        let meep = {
-            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
-            datasets: [
-                {
-                    label: "Risk Index Score",
-                    data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-                    borderColor: "#ff8a8e", // Color of the line
-                },
-                {
-                    label: "Social Vulnerability Index (SVI)",
-                    data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-                    borderColor: "#aadd67", // Color of the line
-                },
-            ],
-        };
-
-        const riskChart = bbbMap.getChart(meep, "line", "Risk Chart", "Tract GEOID", "Score", true);
-        bbbMap.summaryReportModal.appendChild(riskChart);
-        /*
-        chartData.sort((a, b) => a.y - b.y);
-        let soviConfig = {
-            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
-            datasets: [
-                {
-                    label: "Social Vulnerability",
-                    data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-                    borderColor: "#aadd67", // Color of the line
-                },
-                {
-                    label: "Risk Index Score",
-                    data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-                    borderColor: "#ff8a8e", // Color of the line
-                },
-            ],
-        };
-
-        const soviChart = bbbMap.getChart(soviConfig, "line", "Social Vulnerability Chart", "Tract GEOID", "Score");
-        bbbMap.summaryReportModal.appendChild(soviChart);
-*/
-        let scatter = {
-            labels: chartData.map((m) => m.label),
-            datasets: [
-                {
-                    label: "Scatter Plot",
-                    data: chartData,
-                    borderColor: "rgba(255, 138, 142, 0.9)",
-                    pointRadius: 4,
-                    backgroundColor: "rgba(255, 138, 142, 0.6)",
-                },
-            ],
-        };
-        const scatterChart = bbbMap.getChart(scatter, "scatter", "Scatter Chart", "Risk Score", "Social Vulerability Score", true);
-        bbbMap.summaryReportModal.appendChild(scatterChart);
-
-        let h = bbbMap.climateDictionary.filter((d) => d.type === "hazard");
-        let hazardRiskData = h.map((h) => {
-            let rtn = { name: `${h.name}_RISKS`, alias: h.alias };
-            rtn.value = bbbMap.getAvg(rtn.name, data);
-            return rtn;
-        });
-
-        hazardRiskData = hazardRiskData.filter((d) => d.value > 0);
-
-        hazardRiskData.sort((a, b) => b.value - a.value);
-
-        let hazardRiskConfig = {
-            labels: hazardRiskData.map((m) => m.alias),
-            datasets: [
-                {
-                    label: "Scatter Plot",
-                    data: hazardRiskData.map((m) => m.value),
-                },
-            ],
-        };
-        //const radarChart = bbbMap.getChart(radarConfig, "radar", "Hazard Risk Averages (Only non-zero)");
-        //bbbMap.summaryReportModal.appendChild(radarChart);
-
-        const hazardRiskhart = bbbMap.getChart(hazardRiskConfig, "bar", "Hazard Risk Averages");
-        bbbMap.summaryReportModal.appendChild(hazardRiskhart);
-        //const ealChart = bbbMap.getChart("EAL_VALT", "Expected Annual Loss Chart");
-        //modal.appendChild(ealChart);
-
-        //EALT
-        let ealt = bbbMap.climateDictionary.filter((d) => d.type === "hazard");
-        let ealtData = ealt.map((ealt) => {
-            let rtn = { name: `${ealt.name}_EALT`, alias: ealt.alias };
-            rtn.value = bbbMap.getSum(rtn.name, data);
-            return rtn;
-        });
-
-        //radarData = radarData.filter((d) => d.value > 0);
-        ealtData = ealtData.filter((d) => d.value > 0);
-        ealtData.sort((a, b) => b.value - a.value);
-        let ealtConfig = {
-            labels: ealtData.map((m) => m.alias),
-            datasets: [
-                {
-                    label: "Hazard",
-                    data: ealtData.map((m) => m.value),
-                },
-            ],
-        };
-        const ealtChart = bbbMap.getChart(ealtConfig, "bar", "Total Estimated Loss by Hazard ($)");
-        bbbMap.summaryReportModal.appendChild(ealtChart);
-
-        document.querySelector("calcite-shell").appendChild(bbbMap.summaryReportModal);
-    }
-
-    bbbMap.histogramWhereOld = bbbMap.histogramWhere;
 };
 
 bbbMap.getCard = function (heading, msg) {
@@ -674,25 +282,6 @@ bbbMap.getCard = function (heading, msg) {
     card.appendChild(chipLabel);
     card.appendChild(chip);
     return card;
-};
-
-bbbMap.refreshTractInfo = function (f = bbbMap.feature.graphic) {
-    console.log("refreshTractInfo", f);
-    let feature = f ? f : bbbMap.feature.graphic;
-    let p;
-    if (feature && feature.geometry) {
-        if (feature.geometry.type === "polygon") {
-            const labelPoint = bbbMap.esri.labelPointOperator.execute(feature.geometry);
-            // p = { latitude: feature.geometry.centroid.latitude, longitude: feature.geometry.centroid.longitude, type: "point" };
-            p = { latitude: labelPoint.latitude, longitude: labelPoint.longitude, type: "point" };
-        } else {
-            p = { latitude: feature.geometry.latitude, longitude: feature.geometry.longitude, type: "point" };
-        }
-    } else {
-        p = bbbMap.point;
-    }
-
-    bbbMap.getFFIEC(p, { matchedAddress: "Click" });
 };
 
 bbbMap.getATMContent = function (feature) {
@@ -854,55 +443,6 @@ out body;
     }
 };
 
-bbbMap.getNearbyTracts = async function (f, tool) {
-    console.log("getNearbyTracts", f, tool);
-    let feature = f ? f : bbbMap.feature.graphic;
-    let point, geom;
-    bbbMap.summaryReportModal = "";
-    bbbMap.bodyScrim.hidden = false;
-    try {
-        if (bbbMap?.tractShapeLayer) {
-            bbbMap?.tractShapeLayer.destroy();
-        }
-
-        if (tool) {
-            geom = feature.geometry;
-        } else {
-            point = feature ? feature.geometry : bbbMap?.point;
-            geom = bbbMap.esri.geometryEngine.geodesicBuffer(point, bbbMap.BUFFER_SIZE, "miles");
-        }
-
-        if (bbbMap.bufferGraphic) {
-            bbbMap.graphicsLayer.remove(bbbMap.bufferGraphic);
-        }
-        bbbMap.bufferGraphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
-        bbbMap.graphicsLayer.add(bbbMap.bufferGraphic);
-
-        const q = {
-            where: "1=1",
-            outFields: ["*"],
-            geometry: geom,
-            spatialRelationship: "intersects",
-            returnGeometry: true,
-            returnCentroid: true,
-        };
-
-        console.log("getNearbyTracts Query", q);
-        const results = await bbbMap.censusTractShapeLayer.queryFeatures(q);
-        //const results = await bbbMap.tractLayerView.queryFeatures(q);
-
-        console.log("getNearbyTracts results", results);
-        if (results.features.length === 0) {
-            throw new Error("Unable to find a census tract for this location");
-        }
-
-        bbbMap.showNearbyTracts(results, geom);
-    } catch (e) {
-        bbbMap.bodyScrim.hidden = true;
-        bbbMap.showAlert("danger", `Error Getting Tracts`, `${e.message}`);
-    }
-};
-
 bbbMap.getDictionary = function (area = bbbMap.focusArea) {
     let d = bbbMap.climateDictionary.find((d) => d.name === area);
     return d;
@@ -1047,6 +587,7 @@ bbbMap.ui = function () {
     });
 };
 
+//Filtering Functions
 bbbMap.getCBSA = async function (cbsaType = "Metropolitan Statistical Area") {
     console.log("getCBSA");
     if (bbbMap.stateFilter) {
@@ -1321,6 +862,56 @@ bbbMap.applyFilter = async function (counties) {
         }
 
         bbbMap.showNearbyTracts(results);
+    }
+};
+
+//Tract functions
+bbbMap.getNearbyTracts = async function (f, tool) {
+    console.log("getNearbyTracts", f, tool);
+    let feature = f ? f : bbbMap?.feature?.graphic;
+    let point, geom;
+    bbbMap.summaryReportModal = "";
+    bbbMap.bodyScrim.hidden = false;
+    try {
+        if (bbbMap?.tractShapeLayer) {
+            bbbMap?.tractShapeLayer.destroy();
+        }
+
+        if (tool) {
+            geom = feature.geometry;
+        } else {
+            point = feature ? feature.geometry : bbbMap?.point;
+            geom = bbbMap.esri.geometryEngine.geodesicBuffer(point, bbbMap.BUFFER_SIZE, "miles");
+        }
+
+        if (bbbMap.bufferGraphic) {
+            bbbMap.graphicsLayer.remove(bbbMap.bufferGraphic);
+        }
+        bbbMap.bufferGraphic = new bbbMap.esri.Graphic({ geometry: geom, symbol: bbbMap.bufferedSymbol });
+        bbbMap.graphicsLayer.add(bbbMap.bufferGraphic);
+
+        const q = {
+            where: "1=1",
+            outFields: ["*"],
+            geometry: geom,
+            spatialRelationship: "intersects",
+            returnGeometry: true,
+            returnCentroid: true,
+        };
+
+        console.log("getNearbyTracts Query", q);
+        const results = await bbbMap.censusTractShapeLayer.queryFeatures(q);
+        //const results = await bbbMap.tractLayerView.queryFeatures(q);
+
+        console.log("getNearbyTracts results", results);
+        if (results.features.length === 0) {
+            throw new Error("Unable to find a census tract for this location");
+        }
+
+        bbbMap.showNearbyTracts(results, geom);
+    } catch (e) {
+        bbbMap.bodyScrim.hidden = true;
+        bbbMap.showAlert("danger", `Error Getting Tracts`, `${e.message}`);
     }
 };
 
@@ -1621,6 +1212,26 @@ bbbMap.clearMainPanel = function () {
     }
 };
 
+//FFIEC functions
+bbbMap.refreshTractInfo = function (f = bbbMap.feature.graphic) {
+    console.log("refreshTractInfo", f);
+    let feature = f ? f : bbbMap?.feature?.graphic;
+    let p;
+    if (feature && feature.geometry) {
+        if (feature.geometry.type === "polygon") {
+            const labelPoint = bbbMap.esri.labelPointOperator.execute(feature.geometry);
+            // p = { latitude: feature.geometry.centroid.latitude, longitude: feature.geometry.centroid.longitude, type: "point" };
+            p = { latitude: labelPoint.latitude, longitude: labelPoint.longitude, type: "point" };
+        } else {
+            p = { latitude: feature.geometry.latitude, longitude: feature.geometry.longitude, type: "point" };
+        }
+    } else {
+        p = bbbMap.point;
+    }
+
+    bbbMap.getFFIEC(p, { matchedAddress: "Click" });
+};
+
 bbbMap.getFFIEC = async function (point, census) {
     console.log("getFFIEC", point, census);
     bbbMap.mainPanel.closed = false;
@@ -1835,6 +1446,7 @@ bbbMap.addRow = function (l, v) {
 
     return row;
 };
+
 bbbMap.getTable = function (bordered = true, striped = true, scale = "s") {
     const table = document.createElement("calcite-table");
     table.bordered = bordered;
@@ -1951,6 +1563,441 @@ bbbMap.USDollar = new Intl.NumberFormat("en-us", { maximumFractionDigits: 0, sty
 bbbMap.BUFFER_SIZE = 3;
 bbbMap.MAX_AREA = 500;
 bbbMap.focusArea = "RISK";
+
+/*
+            report: [
+                { title: "Avg Resilience Score", fxn: bbbMap.getAvg },
+                { title: "Min Resilience Score", fxn: bbbMap.getMin },
+                { title: "Max Resilience Score", fxn: bbbMap.getMax },
+            ],
+bbbMap.climateCategories.map((c) => {
+    let cols = temp1.filter((t) => t.name.includes(`${c.name}_`));
+    let m = cols.map((t) => {
+        return { name: t.name, alias: t.alias, type: t.type };
+    }); // {name: t.name, alias: t.alias, type: t.type});
+    c["cols"] = m;
+    return c;
+});
+*/
+
+//Reporting
+bbbMap.summaryReportReset = function () {
+    bbbMap.tractShapeLayerView.featureEffect = "";
+};
+
+bbbMap.getSumByGroup = function (groupBy, data = bbbMap?.tractShapeLayerSource?.source, sumAttr = "") {
+    console.log("xxxgetSumByGroup", groupBy, data, sumAttr);
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((acc, item) => {
+                if (!acc[item.attributes[groupBy]]) {
+                    acc[item.attributes[groupBy]] = 0;
+                }
+
+                if (sumAttr) {
+                    acc[item.attributes[groupBy]] += item.attributes[sumAttr];
+                } else {
+                    acc[item.attributes[groupBy]] += 1;
+                }
+                return acc;
+            }, {});
+        }
+    } catch (e) {
+        console.log("Error getting getSumByGroup", e, groupBy, data, sumAttr);
+    }
+    return rtn;
+};
+
+bbbMap.getSum = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0);
+        }
+    } catch (e) {
+        console.log("Error getting Sum", e, attr);
+    }
+    return rtn;
+};
+
+bbbMap.getAvg = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
+    let rtn = "";
+    try {
+        if (data) {
+            let d = data.map((f) => f.attributes[attr]);
+            d = d.filter((d) => !isNaN(d) && d > 0);
+            //rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0) / data.length;
+            rtn = d.reduce((sum, item) => sum + item, 0) / data.length;
+        }
+    } catch (e) {
+        console.log("Error getting Avg", e, attr);
+    }
+    return rtn;
+};
+
+bbbMap.getMin = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((min, item) => (item.attributes[attr] < min ? item.attributes[attr] : min), Infinity);
+        }
+    } catch (e) {
+        console.log("Error getting Min", e);
+    }
+    return rtn;
+};
+
+bbbMap.getMax = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
+    let rtn = "";
+    try {
+        if (data) {
+            rtn = data.reduce((max, item) => (item.attributes[attr] > max ? item.attributes[attr] : max), -Infinity);
+        }
+    } catch (e) {
+        console.log("Error getting Max", e);
+    }
+    return rtn;
+};
+
+bbbMap.applyFxn = function (fxn, attr, data) {
+    return fxn(attr, data);
+};
+
+bbbMap.buildSummaryReportHeader = function (data) {
+    let tracts = data.length;
+    let area = bbbMap.getSum("AREA");
+    let counties = [...new Set(data.map((i) => `${i.attributes.COUNTY}, ${i.attributes.STATE}`))];
+    let countyTxt = counties.join("; ");
+    const headerDiv = document.createElement("div");
+    headerDiv.innerHTML = `<h3>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<BR>Area ${bbbMap.Number.format(area)} square miles</h3>`;
+    bbbMap.summaryReportModal.appendChild(headerDiv);
+    return headerDiv;
+};
+
+bbbMap.buildSummaryReportContent = function (data) {
+    //build report struture
+    const climateBlock = bbbMap.getBlock("Climate");
+    const container = document.createElement("div");
+    container.classList.add("searchCardContainer");
+
+    let summaryReport = [];
+    ["eal", "nri", "sovi", "cr"].forEach((g) => {
+        console.log("group", g);
+        let category = bbbMap.climateCols[g];
+        if (category) {
+            let reportGroups = category.filter((t) => t?.report);
+            console.log("report groups", reportGroups);
+            reportGroups.forEach((rg) => {
+                summaryReport.push(rg);
+            });
+        }
+    });
+
+    console.log("summaryReport", summaryReport);
+    summaryReport.forEach((g, i) => {
+        console.log("Report group", g);
+
+        const block = bbbMap.getBlock(g?.reportName);
+        //block.style = "width: 30%";
+        const table = bbbMap.getTable(true, false);
+        table.layout = "fixed";
+
+        g.report.forEach((e) => {
+            //console.log("Report", e);
+            let val = bbbMap.applyFxn(e.fxn, g.name, data);
+            let title = e.title;
+            //console.log("here we go", val, title);
+            table.appendChild(bbbMap.addRow(title, bbbMap[g.type].format(val)));
+        });
+        block.appendChild(table);
+        container.appendChild(block);
+    });
+
+    climateBlock.appendChild(container);
+
+    const groupByContainer = document.createElement("div");
+    groupByContainer.classList.add("searchCardContainer");
+
+    const groupByConfig = [
+        { title: "Risk Rating", groupBy: "RISK_RATNG", sumAttr: "", format: "Number" },
+        { title: "Social Vulnerability Rating", groupBy: "SOVI_RATNG", sumAttr: "", format: "Number" },
+        { title: "Community Resiliance Rating", groupBy: "RESL_RATNG", sumAttr: "", format: "Number" },
+    ];
+    groupByConfig.forEach((b) => {
+        const block = bbbMap.buildGroupByTables(data, b);
+        groupByContainer.appendChild(block);
+    });
+    climateBlock.appendChild(groupByContainer);
+
+    return climateBlock;
+};
+
+bbbMap.getChart = function (data, type, title = "Chart", xLabel = "", yLabel = "", enableClick = false) {
+    // let data = bbbMap?.tractShapeLayerSource?.source;
+    const block = document.createElement("calcite-block");
+    block.heading = title;
+    block.open = true;
+    block.collapsible = true;
+
+    const container = document.createElement("div");
+    container.style.width = "100%";
+    container.style.height = type === "line" || type === "bar" ? "350px" : "100%";
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    //canvas.width = "300";
+    //canvas.height = "200";
+    container.appendChild(canvas);
+    block.appendChild(container);
+    //console.log("canvas", container, canvas);
+
+    //let labels = data.map((d) => d.attributes.TRACT);
+    //let risk_score = data.map((d) => d.attributes.RISK_SCORE);
+    let scales =
+        type === "radar"
+            ? { r: { pointLabels: { color: "white", font: { size: 9 } }, ticks: { color: "red", display: false }, grid: { color: "rgba(255, 255, 255, 0.3)" }, angleLines: { color: "rgba(255, 255, 255, 0.3)" } } }
+            : {
+                  x: { title: { display: true, text: xLabel } },
+                  y: { title: { display: true, text: yLabel } },
+                  //r: { pointLabels: { font: { size: 9 } }, ticks: {color: "red", display: false } },
+              };
+
+    const chart = new Chart(ctx, {
+        type: type,
+        data: data,
+        options: {
+            scales: scales,
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    enabled: true,
+                },
+                legend: {
+                    display: true,
+                },
+
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: "xy",
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                        },
+                        mode: "xy",
+                    },
+                },
+            },
+            onClick: async (event, elements) => {
+                console.log("click".event, elements, data, this);
+                if (enableClick) {
+                    if (elements && elements.length > 0) {
+                        const point = elements[0];
+                        const label = data.labels[point.index];
+                        const value = data.datasets[point.datasetIndex].data[point.index];
+
+                        console.log("click", point, label, value);
+
+                        let results = await bbbMap.getTractGeom(label);
+
+                        let geoid = label;
+                        let q = { where: `TRACTFIPS = '${geoid}'` };
+
+                        bbbMap.tractShapeLayerView.featureEffect = {
+                            filter: q,
+                            excludedEffect: "grayscale(50%) opacity(33%)",
+                            includedEffect: " opacity(90%)", //bloom(1.5, 0.5px, 0.1)
+                        };
+                        bbbMap.sketchLayer.removeAll();
+
+                        bbbMap.summaryReportModal.open = false;
+                        bbbMap.view.goTo(results.features[0].geometry.extent.expand(1.5), bbbMap.goToOptions);
+                    }
+                }
+            },
+        },
+    });
+    //}, 100);
+    return block;
+};
+
+bbbMap.buildCharts = function (data, container = bbbMap.summaryReportModal) {
+    console.log("buildCharts", data, container);
+    const dict = bbbMap.getDictionary();
+    console.log("Chart Dictionary", dict);
+    //Charts
+    let chartData = data.map((d) => {
+        return { label: d.attributes.TRACTFIPS, x: d.attributes.RISK_SCORE, y: d.attributes.SOVI_SCORE, eal: d.attributes.EAL_SCORE };
+    });
+
+    chartData.sort((a, b) => a.x - b.x);
+    let meep = {
+        labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
+        datasets: [
+            {
+                label: "Risk Index Score",
+                data: chartData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                borderColor: "#ff8a8e", // Color of the line
+            },
+            {
+                label: "Social Vulnerability Index (SVI)",
+                data: chartData.map((m) => m.y), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                borderColor: "#aadd67", // Color of the line
+            },
+        ],
+    };
+
+    const riskChart = bbbMap.getChart(meep, "line", "Risk Chart", "Tract GEOID", "Score", true);
+    container.appendChild(riskChart);
+
+    let scatter = {
+        labels: chartData.map((m) => m.label),
+        datasets: [
+            {
+                label: "Scatter Plot",
+                data: chartData,
+                borderColor: "rgba(255, 138, 142, 0.9)",
+                pointRadius: 4,
+                backgroundColor: "rgba(255, 138, 142, 0.6)",
+            },
+        ],
+    };
+    const scatterChart = bbbMap.getChart(scatter, "scatter", "Scatter Chart", "Risk Score", "Social Vulerability Score", true);
+    container.appendChild(scatterChart);
+
+    //All Hazards
+    let h = bbbMap.climateDictionary.filter((d) => d.type === "hazard");
+    let hazardRiskData = h.map((h) => {
+        let rtn = { name: `${h.name}_RISKS`, alias: h.alias };
+        rtn.value = bbbMap.getAvg(rtn.name, data);
+        return rtn;
+    });
+
+    hazardRiskData = hazardRiskData.filter((d) => d.value > 0);
+
+    hazardRiskData.sort((a, b) => b.value - a.value);
+
+    let hazardRiskConfig = {
+        labels: hazardRiskData.map((m) => m.alias),
+        datasets: [
+            {
+                label: "Scatter Plot",
+                data: hazardRiskData.map((m) => m.value),
+            },
+        ],
+    };
+    //const radarChart = bbbMap.getChart(radarConfig, "radar", "Hazard Risk Averages (Only non-zero)");
+    //bbbMap.summaryReportModal.appendChild(radarChart);
+
+    const hazardRiskhart = bbbMap.getChart(hazardRiskConfig, "bar", "Hazard Risk Averages");
+    container.appendChild(hazardRiskhart);
+    //const ealChart = bbbMap.getChart("EAL_VALT", "Expected Annual Loss Chart");
+    //modal.appendChild(ealChart);
+
+    //EALT
+    let ealt = bbbMap.climateDictionary.filter((d) => d.type === "hazard");
+    let ealtData = ealt.map((ealt) => {
+        let rtn = { name: `${ealt.name}_EALT`, alias: ealt.alias };
+        rtn.value = bbbMap.getSum(rtn.name, data);
+        return rtn;
+    });
+
+    //radarData = radarData.filter((d) => d.value > 0);
+    ealtData = ealtData.filter((d) => d.value > 0);
+    ealtData.sort((a, b) => b.value - a.value);
+    let ealtConfig = {
+        labels: ealtData.map((m) => m.alias),
+        datasets: [
+            {
+                label: "Hazard",
+                data: ealtData.map((m) => m.value),
+            },
+        ],
+    };
+    const ealtChart = bbbMap.getChart(ealtConfig, "bar", "Total Estimated Loss by Hazard ($)");
+    container.appendChild(ealtChart);
+
+    if (dict.type === "hazard") {
+        //EALT
+        let field = `${dict.name}_EALT`;
+        let zData = data.map((d) => {
+            return { label: d.attributes.TRACTFIPS, ealt: d.attributes[field] };
+        });
+        console.log("build hazard chart", field, zData);
+        zData.sort((a, b) => a.ealt - b.ealt);
+        let zConfig = {
+            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
+            datasets: [
+                {
+                    label: `${dict.alias}`,
+                    data: zData.map((m) => m.ealt), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                    borderColor: "#e7a369", // Color of the line
+                },
+            ],
+        };
+
+        const zChart = bbbMap.getChart(zConfig, "line", `${dict.alias} Total EAL`, "Tract GEOID", "Expected Annual Loss", true);
+        container.appendChild(zChart);
+    }
+};
+
+bbbMap.buildGroupByTables = function (data, config) {
+    console.log("buildGroupByTables", data, config);
+    const d = bbbMap.getSumByGroup(config.groupBy, data, config.sumAttr);
+    const sortedData = Object.entries(d).sort((a, b) => b[1] - a[1]);
+
+    const block = bbbMap.getBlock(config.title);
+    const table = bbbMap.getTable(true, false);
+
+    sortedData.forEach((d) => {
+        table.appendChild(bbbMap.addRow(d[0], bbbMap[config.format].format(d[1])));
+    });
+    block.appendChild(table);
+    return block;
+};
+
+bbbMap.getSummaryReport = async function () {
+    console.log("getSummaryReport");
+
+    //if it's already built, and the filter is the same, just open the modal
+    if (bbbMap.summaryReportModal && bbbMap.histogramWhere === bbbMap.histogramWhereOld) {
+        bbbMap.summaryReportModal.open = true;
+    } else {
+        //otherwise, build the report
+        bbbMap.summaryReportModal = document.createElement("calcite-dialog");
+
+        bbbMap.summaryReportModal.modal = true;
+        bbbMap.summaryReportModal.open = true;
+        bbbMap.summaryReportModal.heading = "Area Summary Report";
+        bbbMap.summaryReportModal.slot = "dialogs";
+
+        //modal.scale = "l";
+        bbbMap.summaryReportModal.widthScale = "l";
+
+        //let s = [{ name: "EAL_VALT", alias: "Total Estimated Loss", format: "USDollar" }];
+        //let data = bbbMap.tractShapeLayerSource.source;
+        const results = await bbbMap.tractShapeLayer.queryFeatures({ where: bbbMap.histogramWhere });
+        const data = results.features;
+
+        console.log("getSummary", results, data);
+        //Header
+        const header = bbbMap.buildSummaryReportHeader(data);
+        bbbMap.summaryReportModal.appendChild(header);
+
+        //Content
+        const content = bbbMap.buildSummaryReportContent(data);
+        bbbMap.summaryReportModal.appendChild(content);
+
+        bbbMap.buildCharts(data);
+
+        document.querySelector("calcite-shell").appendChild(bbbMap.summaryReportModal);
+    }
+
+    bbbMap.histogramWhereOld = bbbMap.histogramWhere;
+};
 
 bbbMap.climateDictionary = [
     { name: "RISK", alias: "National Risk Index (NRI)", type: "nri", suffix: "RATNG" },
@@ -2082,8 +2129,8 @@ bbbMap.climateCols = {
 
         { name: "EXP_AREA", alias: "Impacted Area (sq mi)", type: "Number", category: "Exposure" },
         { name: "EXPB", alias: "Building Value", type: "USDollar", category: "Exposure" },
-        { name: "EXPP", alias: "Population", type: "Number", category: "Exposure" },
-        { name: "EXPPE", alias: "Population Equivalence", type: "Number", category: "Exposure" },
+        //{ name: "EXPP", alias: "Population", type: "Number", category: "Exposure" },
+        { name: "EXPPE", alias: "Population Equivalence", type: "USDollar", category: "Exposure" },
         { name: "EXPA", alias: "Agriculture Value", type: "USDollar", category: "Exposure" },
         { name: "EXPT", alias: "Total", type: "Number", category: "Exposure" },
 
@@ -2094,11 +2141,11 @@ bbbMap.climateCols = {
 
         { name: "EALR", alias: "Rating", type: "string", category: "Expected Annual Loss" },
         { name: "EALS", alias: "Score", type: "Number", category: "Expected Annual Loss" },
-        { name: "EALT", alias: "Total", type: "Number", category: "Expected Annual Loss" },
+        { name: "EALT", alias: "Total", type: "USDollar", category: "Expected Annual Loss" },
         { name: "ALR_NPCTL", alias: "National Percentile", type: "Number", category: "Expected Annual Loss" },
         { name: "EALB", alias: "Building Value", type: "USDollar", category: "Expected Annual Loss" },
-        { name: "EALP", alias: "Population", type: "Number", category: "Expected Annual Loss" },
-        { name: "EALPE", alias: "Population Equivalence", type: "Number", category: "Expected Annual Loss" },
+        //{ name: "EALP", alias: "Population", type: "Number", category: "Expected Annual Loss" },
+        { name: "EALPE", alias: "Population Equivalence", type: "USDollar", category: "Expected Annual Loss" },
         { name: "EALA", alias: "Agriculture Value", type: "USDollar", category: "Expected Annual Loss" },
 
         { name: "ALRB", alias: "Building Rate", type: "Number", category: "Expected Annual Loss" },
@@ -2106,22 +2153,6 @@ bbbMap.climateCols = {
         { name: "ALRA", alias: "Agriculture Rate", type: "Number", category: "Expected Annual Loss" },
     ],
 };
-
-/*
-            report: [
-                { title: "Avg Resilience Score", fxn: bbbMap.getAvg },
-                { title: "Min Resilience Score", fxn: bbbMap.getMin },
-                { title: "Max Resilience Score", fxn: bbbMap.getMax },
-            ],
-bbbMap.climateCategories.map((c) => {
-    let cols = temp1.filter((t) => t.name.includes(`${c.name}_`));
-    let m = cols.map((t) => {
-        return { name: t.name, alias: t.alias, type: t.type };
-    }); // {name: t.name, alias: t.alias, type: t.type});
-    c["cols"] = m;
-    return c;
-});
-*/
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("DOM loaded");
