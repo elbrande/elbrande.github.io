@@ -6,9 +6,10 @@
 
         <title>3B Climate</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!--
         <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
-
+        -->
         <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
         <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
 
@@ -36,7 +37,7 @@
             }
 
             #address {
-                width: 500px;
+                width: 350px;
             }
 
             .searchCardContainer {
@@ -102,7 +103,9 @@
                     <div id="mainPanelContent"></div>
                 </calcite-panel>
                 <calcite-panel data-panel-id="filter" id="filterPanel" heading="Filters" closed closable>
-                    <div id="filterPanelContent"></div>
+                    <div id="filterPanelContent">
+                        <calcite-scrim id="filterScrim" loading hidden>Loading Filter...</calcite-scrim>
+                    </div>
                 </calcite-panel>
             </calcite-shell-panel>
             <!---------------------------------Main--------------------------------->
