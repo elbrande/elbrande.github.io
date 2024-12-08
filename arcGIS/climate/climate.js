@@ -7,6 +7,7 @@ bbbMap.init = () => {
     bbbMap.nriTractService = "https://services.arcgis.com/XG15cJAlne2vxtgt/ArcGIS/rest/services/National_Risk_Index_Census_Tracts/FeatureServer/0";
     bbbMap.nriCountyService = "https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/National_Risk_Index_Counties/FeatureServer";
     bbbMap.cbsaService = "https://services1.arcgis.com/HLC8bAygObK4fhPW/ArcGIS/rest/services/Core_based_statistical_area_for_the_US_July_2023/FeatureServer/2";
+    bbbMap.tractService = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Poverty_by_Age_Boundaries/FeatureServer/2";
     bbbMap.goToOptions = { animate: true, animationMode: "auto", duration: 1000, maxDuration: 2000, easing: "ease" };
     bbbMap.initMap();
 };
@@ -82,6 +83,7 @@ bbbMap.initMap = () => {
             bbbMap.nriTractShapeLayer = new FeatureLayer({ id: "nriTractService", url: bbbMap.nriTractService });
             bbbMap.nriCountyShapeLayer = new FeatureLayer({ id: "nriCountyService", url: bbbMap.nriCountyService });
             bbbMap.cbsaShapeLayer = new FeatureLayer({ id: "cbsaService", url: bbbMap.cbsaService });
+            bbbMap.tractLayer = new FeatureLayer({ id: "tractService", url: bbbMap.tractService });
             //bbbMap.map.add(bbbMap.nriTractShapeLayer);
 
             bbbMap.view.on("immediate-click", async (e) => {
@@ -1670,6 +1672,7 @@ bbbMap.getSum = function (attr, data = bbbMap?.tractShapeLayerSource?.source) {
     try {
         if (data) {
             rtn = data.reduce((sum, item) => sum + item.attributes[attr], 0);
+            //rtn = data.reduce((sum, item) => sum + item[attr], 0);
         }
     } catch (e) {
         console.log("Error getting Sum", e, attr);
@@ -1722,8 +1725,9 @@ bbbMap.applyFxn = function (fxn, attr, data) {
 
 bbbMap.buildSummaryReportHeader = function (data) {
     let tracts = data.length;
-    let area = bbbMap.getSum("AREA");
+    let area = bbbMap.getSum("AREA", data);
     let counties = [...new Set(data.map((i) => `${i.attributes.COUNTY}, ${i.attributes.STATE}`))];
+    //let counties = [...new Set(data.map((i) => `${i.COUNTY}, ${i.STATE}`))];
     let countyTxt = counties.join("; ");
     const headerDiv = document.createElement("div");
     headerDiv.innerHTML = `<h3>Tracts: ${bbbMap.Number.format(tracts)} <br>Counties: ${countyTxt}<BR>Area ${bbbMap.Number.format(area)} square miles</h3>`;
@@ -2041,9 +2045,29 @@ bbbMap.getSummaryReport = async function () {
         const results = await bbbMap.tractShapeLayer.queryFeatures({ where: where });
         const data = results.features;
 
+        //get tract refernce data
+        /*
+        let ids = data.map((s) => s.attributes.TRACTFIPS);
+        let tractWhere = ids.join(`','`);
+        tractWhere = `GEOID IN ('${tractWhere}')`;
+        console.log(tractWhere);
+        const tracts = await bbbMap.tractLayer.queryFeatures({ where: tractWhere, outFields: ["GEOID", "B17020_calc_pctPovE"] });
+        tractData = tracts.features;
+        const joinData = data.map((d) => {
+            const ref = tractData.find((r) => r.attributes.GEOID === d.attributes.TRACTFIPS);
+            return { ...d.attributes, ...ref.attributes };
+        });
+*/
+        //let map = new Map(tractData.map((item) => [item.attributes["GEOID"], item.attributes.B17020_calc_pctPovE]));
+        //joinData = data.map((item) => ({
+        //  ...item.attributes.TRACTFIPS,
+        //  ...map.get(item.attributes["GEOID"]),
+        //}));
+
         console.log("getSummary", results, data);
         //Header
         const header = bbbMap.buildSummaryReportHeader(data);
+        //const header = bbbMap.buildSummaryReportHeader(joinData);
         bbbMap.summaryReportModal.appendChild(header);
 
         //Content
