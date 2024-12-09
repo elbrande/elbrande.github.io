@@ -529,6 +529,7 @@ bbbMap.ui = function () {
     select.addEventListener("calciteSelectChange", (e) => {
         console.log("climate hazard change", e);
         bbbMap.focusArea = e.target.value;
+        bbbMap.tractShapeLayerView.featureEffect = "";
         bbbMap.buildHistogram(bbbMap.focusArea);
         let renderer = bbbMap.getClimateRenderer(bbbMap.focusArea);
         let layer = bbbMap.map.findLayerById("tractShapes");
@@ -649,7 +650,7 @@ bbbMap.getCBSA = async function (cbsaType = "Metropolitan Statistical Area") {
 
                 option.value = feature.attributes.CBSACODE;
                 //option.innerHTML = `${feature.attributes.STATE} (${feature.attributes.count} tracts)`;
-                option.textLabel = `${feature.attributes.CBSANAME} (${feature.attributes.count} Counties)`;
+                option.textLabel = `${feature.attributes.CBSANAME}`;
                 select.appendChild(option);
             });
 
@@ -778,7 +779,8 @@ bbbMap.getStates = async function () {
             q.groupByFieldsForStatistics = ["STATEFIPS", "STATEABBRV", "STATE"];
 
             console.log("getStates query", q);
-            const results = await bbbMap.nriTractShapeLayer.queryFeatures(q);
+            //const results = await bbbMap.nriTractShapeLayer.queryFeatures(q);
+            const results = await bbbMap.nriCountyShapeLayer.queryFeatures(q);
             console.log("getStates results", results);
 
             //let select = document.createElement("calcite-select");
@@ -793,7 +795,7 @@ bbbMap.getStates = async function () {
 
                 option.value = feature.attributes.STATEFIPS;
                 //option.innerHTML = `${feature.attributes.STATE} (${feature.attributes.count} tracts)`;
-                option.textLabel = `${feature.attributes.STATE} (${feature.attributes.count} tracts)`;
+                option.textLabel = `${feature.attributes.STATE}`;
                 select.appendChild(option);
             });
 
@@ -842,7 +844,7 @@ bbbMap.getCounties = async function (statefips) {
         q.groupByFieldsForStatistics = ["COUNTYFIPS", "COUNTY", "STCOFIPS"];
 
         console.log("getCounties query", q);
-        const results = await bbbMap.nriTractShapeLayer.queryFeatures(q);
+        const results = await bbbMap.nriCountyShapeLayer.queryFeatures(q);
         console.log("getCounties results", results);
 
         //let select = document.createElement("calcite-select");
@@ -856,7 +858,7 @@ bbbMap.getCounties = async function (statefips) {
             let option = document.createElement("calcite-combobox-item");
 
             option.value = feature.attributes.STCOFIPS;
-            option.textLabel = `${feature.attributes.COUNTY} (${feature.attributes.count} tracts)`;
+            option.textLabel = `${feature.attributes.COUNTY}`;
 
             select.appendChild(option);
         });
@@ -903,8 +905,22 @@ bbbMap.applyFilter = async function (counties) {
         };
 
         console.log("applyFilter Query", q);
+        const count = await bbbMap.nriTractShapeLayer.queryFeatureCount(q);
+        console.log("getNearbyTracts count", count);
+
+        let results, msg;
+        bbbMap.grain = "Tracts";
+
+        if (count > bbbMap.MAX_TRACTS) {
+            bbbMap.grain = "Counties";
+            msg = `<br> Note: This area contains ${bbbMap.Number.format(count)} tracts which is over the limit of ${bbbMap.Number.format(bbbMap.MAX_TRACTS)} features.  If you are interested in Census Tract Demographics, please use a smaller area.`;
+            results = await bbbMap.nriCountyShapeLayer.queryFeatures(q);
+        } else {
+            results = await bbbMap.nriTractShapeLayer.queryFeatures(q);
+        }
+
         //const results = await bbbMap.nriTractShapeLayer.queryFeatures(q);
-        const results = await bbbMap.nriCountyShapeLayer.queryFeatures(q);
+        //const results = await bbbMap.nriCountyShapeLayer.queryFeatures(q);
 
         //const results = await bbbMap.tractLayerView.queryFeatures(q);
 
@@ -912,8 +928,7 @@ bbbMap.applyFilter = async function (counties) {
         if (results.features.length === 0) {
             throw new Error("Unable to find a census tract for this filter");
         }
-
-        bbbMap.showNearbyTracts(results);
+        bbbMap.showNearbyTracts(results, null, ` ${bbbMap.grain} found using predefined filters.`);
     }
 };
 
@@ -958,9 +973,9 @@ bbbMap.getNearbyTracts = async function (f, tool) {
         let results, msg;
         bbbMap.grain = "Tracts";
 
-        if (count > 2000) {
+        if (count > bbbMap.MAX_TRACTS) {
             bbbMap.grain = "Counties";
-            msg = `<br>Note: This area contains ${bbbMap.Number.format(count)} tracts which is over the limit of 2,000 features.  If you are interested in Census Tract Demographics, please use a smaller area.`;
+            msg = `<br> Note: This area contains ${bbbMap.Number.format(count)} tracts which is over the limit of ${bbbMap.Number.format(bbbMap.MAX_TRACTS)} features.  If you are interested in Census Tract Demographics, please use a smaller area.`;
             results = await bbbMap.nriCountyShapeLayer.queryFeatures(q);
         } else {
             results = await bbbMap.nriTractShapeLayer.queryFeatures(q);
@@ -979,7 +994,7 @@ bbbMap.getNearbyTracts = async function (f, tool) {
     }
 };
 
-bbbMap.showNearbyTracts = async function (results, geom, msg) {
+bbbMap.showNearbyTracts = async function (results, geom, msg = " ") {
     console.log("showNearbyTracts", results, geom);
     try {
         let layer = {
@@ -1017,6 +1032,26 @@ bbbMap.showNearbyTracts = async function (results, geom, msg) {
         bbbMap.tractShapeLayer = new bbbMap.esri.FeatureLayer(layer);
         bbbMap.map.add(bbbMap.tractShapeLayer);
         bbbMap.tractShapeLayerView = await bbbMap.view.whenLayerView(bbbMap.tractShapeLayer);
+
+        bbbMap.legendContainer.addEventListener("click", (e) => {
+            const target = e.target.closest(".esri-legend__symbol");
+            if (target) {
+                const rating = target.parentNode.parentNode.querySelector(".esri-legend__layer-cell--info").innerText;
+                console.log("Rating");
+                let dict = bbbMap.getDictionary();
+                let field = `${bbbMap.focusArea}_${dict.suffix}`;
+                let q = { where: `${field} = '${rating}'` };
+                bbbMap.tractShapeLayerView.featureEffect = {
+                    filter: q,
+                    excludedEffect: "grayscale(50%) opacity(5%)",
+                    includedEffect: "opacity(90%)",
+                };
+
+                q = { where };
+            } else {
+                bbbMap.tractShapeLayerView.featureEffect = "";
+            }
+        });
 
         bbbMap.buildHistogram();
 
@@ -1058,7 +1093,7 @@ bbbMap.showNearbyTracts = async function (results, geom, msg) {
         let areaText = "";
         if (geom) {
             let area = geom ? bbbMap.esri.geometryEngine.geodesicArea(geom, "square-miles") : "";
-            areaText = `${bbbMap.grain} within ${bbbMap.Number.format(area)} square miles`;
+            areaText = ` ${bbbMap.grain} within ${bbbMap.Number.format(area)} square miles`;
         }
         //let radius = "";
         //if (!tool) {
@@ -1066,7 +1101,7 @@ bbbMap.showNearbyTracts = async function (results, geom, msg) {
         //} //${radius}
         //const area = bbbMap.esri.geometryEngine.geodesicArea(geom, 'square-miles');
 
-        bbbMap.showAlert("success", `${bbbMap.grain} Found`, `${results.features.length} ${areaText}.${msg}`, [btn, resetBtn]);
+        bbbMap.showAlert("success", `${bbbMap.grain} Found`, `${results.features.length}${areaText}${msg}`, [btn, resetBtn]);
         //}
     } catch (e) {
         bbbMap.showAlert("danger", `Error Showing Tracts`, `${e.message}`);
@@ -1126,10 +1161,9 @@ bbbMap.buildHistogram = async function (area = bbbMap.focusArea) {
             values: [stats.min, stats.max],
             //dataLines: [{ value: stats.avg, label: "Avg" }],
             rangeType: "between",
-            container: sliderContainer,
             includedBarColor: "#009AF2",
             excludedBarColor: "#4A4A4A",
-
+            container: sliderContainer,
             /* barCreatedFunction: (i, e) => {
                 //console.log("barCreatedFunction", i, e);
                 const bin = results.bins[i];
@@ -2241,7 +2275,8 @@ bbbMap.Number = new Intl.NumberFormat("en-US");
 bbbMap.USDollar = new Intl.NumberFormat("en-us", { maximumFractionDigits: 0, style: "currency", currency: "USD" });
 
 bbbMap.BUFFER_SIZE = 3;
-bbbMap.MAX_AREA = 20000;
+bbbMap.MAX_AREA = 25000;
+bbbMap.MAX_TRACTS = 1000;
 bbbMap.focusArea = "RISK";
 
 document.addEventListener("DOMContentLoaded", () => {
