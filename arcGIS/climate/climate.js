@@ -508,28 +508,49 @@ bbbMap.ui = function () {
 
     const goBtn = document.getElementById("getGeocodeBtn");
     const address = document.getElementById("address");
+
+    bbbMap.histogramContainer = document.createElement("div");
+
     goBtn?.addEventListener("click", async (e) => {
         console.log("goBtn", e, address);
         bbbMap.census.geocoder(address.value);
     });
 
-    let select = document.createElement("calcite-select");
+    bbbMap.focusAreaSelect = document.createElement("calcite-select");
     bbbMap.climateDictionary.forEach((c) => {
         let option = document.createElement("calcite-option");
         option.value = c.name;
         option.innerHTML = c.alias;
-        select.appendChild(option);
+        bbbMap.focusAreaSelect.appendChild(option);
     });
 
     let label = document.createElement("calcite-label");
     label.innerHTML = "Climate Risk Area";
     label.layout = "inline";
-    label.appendChild(select);
+    label.appendChild(bbbMap.focusAreaSelect);
 
-    select.addEventListener("calciteSelectChange", (e) => {
+    bbbMap.focusAreaSelect.addEventListener("keydown", (e) => {
+        console.log("select keydown", e.key);
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            bbbMap.focusAreaScrollActive = true;
+        }
+    });
+
+    bbbMap.focusAreaSelect.addEventListener("keyup", (e) => {
+        console.log("select keyup", e.key);
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            bbbMap.focusAreaScrollActive = false;
+        }
+    });
+
+    bbbMap.focusAreaSelect.addEventListener("calciteSelectChange", (e) => {
         console.log("climate hazard change", e);
+        //if (!bbbMap.focusAreaScrollActive) {
         bbbMap.focusArea = e.target.value;
-        bbbMap.tractShapeLayerView.featureEffect = "";
+        if (bbbMap?.tractShapeLayerView?.featureEffect) {
+            bbbMap.tractShapeLayerView.featureEffect = "";
+        }
+
         bbbMap.buildHistogram(bbbMap.focusArea);
         let renderer = bbbMap.getClimateRenderer(bbbMap.focusArea);
         let layer = bbbMap.map.findLayerById("tractShapes");
@@ -540,6 +561,7 @@ bbbMap.ui = function () {
                 bbbMap.view.openPopup(bbbMap.updatePopupTemplate());
             }
         }
+        //}
     });
 
     bbbMap.parameters.prepend(label);
@@ -1112,16 +1134,20 @@ bbbMap.showNearbyTracts = async function (results, geom, msg = " ") {
 
 bbbMap.buildHistogram = async function (area = bbbMap.focusArea) {
     console.log("buildHistogram", area);
-    if (bbbMap.tractShapeLayerView) {
-        if (bbbMap.histogramContainer) {
-            bbbMap.view.ui.remove(bbbMap.histogramContainer);
-        }
 
-        bbbMap.tractShapeLayerView.filter = "";
+    bbbMap.histogramContainer.innerHTML = "";
+    bbbMap.view.ui.remove(bbbMap.histogramContainer);
+
+    if (bbbMap.tractShapeLayerView) {
         let dict = bbbMap.getDictionary();
         let score = dict.type === "hazard" ? "RISKS" : "SCORE";
         //let field = dict.legendField;
         let field = `${area}_${score}`;
+
+        bbbMap.tractShapeLayerView.filter = "";
+        bbbMap.histogramContainer.innerHTML = `Histogram for ${dict.alias}`;
+        bbbMap.histogramContainer.style.setProperty("background-color", "var(--calcite-color-background)");
+        bbbMap.histogramContainer.style.setProperty("color", "var(--calcite-color-inverse)");
 
         const stats = await bbbMap.esri.summaryStatistics({
             layer: bbbMap.tractShapeLayer,
@@ -1135,8 +1161,8 @@ bbbMap.buildHistogram = async function (area = bbbMap.focusArea) {
             layer: bbbMap.tractShapeLayer,
             field: field,
             numBins: 50,
-            minValue: stats.min,
-            maxValue: stats.max,
+            minValue: 0, //stats.min,
+            maxValue: 100, //stats.max,
             average: stats.avg,
 
             //classificationMethod: "standard-deviation", //"equal-interval","natural-breaks","quantile","standard-deviation"
@@ -1145,20 +1171,16 @@ bbbMap.buildHistogram = async function (area = bbbMap.focusArea) {
 
         console.log("histogram results", results);
 
-        bbbMap.histogramContainer = document.createElement("div");
-        bbbMap.histogramContainer.innerHTML = `Histogram for ${dict.alias}`;
-        bbbMap.histogramContainer.style.setProperty("background-color", "var(--calcite-color-background)");
-        bbbMap.histogramContainer.style.setProperty("color", "var(--calcite-color-inverse)");
         const sliderContainer = document.createElement("div");
 
         const slider = new bbbMap.esri.HistogramRangeSlider({
             bins: results.bins,
-            min: stats.min,
-            max: stats.max,
+            min: 0, //stats.min,
+            max: 100, //stats.max,
             average: stats.avg,
             standardDeviation: stats.stddev,
             //standardDeviationCount: 3,
-            values: [stats.min, stats.max],
+            values: [0, 100], //[stats.min, stats.max],
             //dataLines: [{ value: stats.avg, label: "Avg" }],
             rangeType: "between",
             includedBarColor: "#009AF2",
@@ -1827,7 +1849,82 @@ bbbMap.buildSummaryReportContent = function (data) {
     return climateBlock;
 };
 
-bbbMap.getChart = function (data, type, title = "Chart", xLabel = "", yLabel = "", enableClick = false) {
+bbbMap.doChartHazardUpdate = function (hazard) {
+    console.log("doChartHazardUpdate", hazard);
+    const dict = bbbMap.climateDictionary.find((d) => d.alias === hazard);
+
+    const field = `${dict.name}_EALT`;
+    let label = bbbMap.grain === "Counties" ? "COUNTY" : "TRACTFIPS";
+
+    let data = bbbMap?.reportData;
+    let chart = bbbMap?.chart?.singleHazardLossChart;
+
+    if (data && chart) {
+        const singleHazardLossData = data.map((d) => {
+            return { label: d.attributes[label], x: d.attributes[field] };
+        });
+        singleHazardLossData.sort((a, b) => b.x - a.x);
+        singleHazardLossConfig = {
+            labels: singleHazardLossData.map((m) => m.label),
+            datasets: [{ label: `${dict.alias}`, data: singleHazardLossData.map((m) => m.x), borderColor: "#e7a369" }],
+        };
+
+        chart.data = singleHazardLossConfig;
+        chart.update();
+    }
+};
+
+bbbMap.doChartClickHazardPicker = function (data) {
+    return (event, elements) => {
+        if (elements && elements.length > 0) {
+            const point = elements[0];
+            const hazard = data.labels[point.index];
+
+            bbbMap.hazardSelect.value = hazard;
+            bbbMap.doChartHazardUpdate(hazard);
+        }
+    };
+};
+
+bbbMap.doChartClickZoom = function (data) {
+    return async (event, elements) => {
+        console.log("doChartClickZoom", event, elements, data);
+        if (elements && elements.length > 0) {
+            const point = elements[0];
+            const label = data.labels[point.index];
+            const value = data.datasets[point.datasetIndex].data[point.index];
+
+            console.log("click", point, label, value);
+
+            let results = await bbbMap.getTractGeom(label);
+
+            let geoid = label;
+            let q = { where: `TRACTFIPS = '${geoid}'` };
+
+            bbbMap.tractShapeLayerView.featureEffect = {
+                filter: q,
+                excludedEffect: "grayscale(50%) opacity(33%)",
+                includedEffect: " opacity(90%)", //bloom(1.5, 0.5px, 0.1)
+            };
+            bbbMap.sketchLayer.removeAll();
+
+            bbbMap.summaryReportModal.open = false;
+            bbbMap.view.goTo(results.features[0].geometry.extent.expand(1.5), bbbMap.goToOptions);
+        }
+    };
+};
+bbbMap.getChart = function (
+    data,
+    type,
+    title = "Chart",
+    xLabel = "",
+    yLabel = "",
+    clickFxn = (data) => {
+        return (e, element) => {
+            console.log("clicky", e, element, data);
+        };
+    }
+) {
     // let data = bbbMap?.tractShapeLayerSource?.source;
     const block = document.createElement("calcite-block");
     block.heading = title;
@@ -1885,41 +1982,16 @@ bbbMap.getChart = function (data, type, title = "Chart", xLabel = "", yLabel = "
                     },
                 },*/
             },
-            onClick: async (event, elements) => {
-                console.log("click".event, elements, data, this);
-                if (enableClick) {
-                    if (elements && elements.length > 0) {
-                        const point = elements[0];
-                        const label = data.labels[point.index];
-                        const value = data.datasets[point.datasetIndex].data[point.index];
-
-                        console.log("click", point, label, value);
-
-                        let results = await bbbMap.getTractGeom(label);
-
-                        let geoid = label;
-                        let q = { where: `TRACTFIPS = '${geoid}'` };
-
-                        bbbMap.tractShapeLayerView.featureEffect = {
-                            filter: q,
-                            excludedEffect: "grayscale(50%) opacity(33%)",
-                            includedEffect: " opacity(90%)", //bloom(1.5, 0.5px, 0.1)
-                        };
-                        bbbMap.sketchLayer.removeAll();
-
-                        bbbMap.summaryReportModal.open = false;
-                        bbbMap.view.goTo(results.features[0].geometry.extent.expand(1.5), bbbMap.goToOptions);
-                    }
-                }
-            },
+            onClick: clickFxn(data),
         },
     });
     //}, 100);
-    return block;
+    return { block, chart };
 };
 
 bbbMap.buildCharts = function (data, container = bbbMap.summaryReportModal) {
     console.log("buildCharts", data, container);
+    bbbMap.chart = {};
     const dict = bbbMap.getDictionary();
     console.log("Chart Dictionary", dict);
     //Charts
@@ -1946,8 +2018,9 @@ bbbMap.buildCharts = function (data, container = bbbMap.summaryReportModal) {
         ],
     };
 
-    const riskChart = bbbMap.getChart(meep, "line", "Risk Chart", "Tract GEOID", "Score", true);
-    container.appendChild(riskChart);
+    let block, chart;
+    ({ block, chart } = bbbMap.getChart(meep, "line", "Risk Chart", bbbMap.grain, "Score", bbbMap.doChartClickZoom));
+    container.appendChild(block);
 
     let scatter = {
         labels: chartData.map((m) => m.label),
@@ -1961,8 +2034,9 @@ bbbMap.buildCharts = function (data, container = bbbMap.summaryReportModal) {
             },
         ],
     };
-    const scatterChart = bbbMap.getChart(scatter, "scatter", "Scatter Chart", "Risk Score", "Social Vulerability Score", true);
-    container.appendChild(scatterChart);
+
+    ({ block, chart } = bbbMap.getChart(scatter, "scatter", "Scatter Chart", "Risk Score", "Social Vulerability Score", bbbMap.doChartClickZoom));
+    container.appendChild(block);
 
     //All Hazards
     let h = bbbMap.climateDictionary.filter((d) => d.type === "hazard");
@@ -1988,8 +2062,8 @@ bbbMap.buildCharts = function (data, container = bbbMap.summaryReportModal) {
     //const radarChart = bbbMap.getChart(radarConfig, "radar", "Hazard Risk Averages (Only non-zero)");
     //bbbMap.summaryReportModal.appendChild(radarChart);
 
-    const hazardRiskhart = bbbMap.getChart(hazardRiskConfig, "bar", "Hazard Risk Averages");
-    container.appendChild(hazardRiskhart);
+    ({ block, chart } = bbbMap.getChart(hazardRiskConfig, "bar", "Hazard Risk Averages"));
+    container.appendChild(block);
     //const ealChart = bbbMap.getChart("EAL_VALT", "Expected Annual Loss Chart");
     //modal.appendChild(ealChart);
 
@@ -2013,31 +2087,63 @@ bbbMap.buildCharts = function (data, container = bbbMap.summaryReportModal) {
             },
         ],
     };
-    const ealtChart = bbbMap.getChart(ealtConfig, "bar", "Total Estimated Loss by Hazard ($)");
-    container.appendChild(ealtChart);
+    ({ block, chart } = bbbMap.getChart(ealtConfig, "bar", "Total Estimated Loss by Hazard ($)", "Hazard", "EAL", bbbMap.doChartClickHazardPicker));
 
+    container.appendChild(block);
+
+    //Single Hazard
+    let field, datasetLabel;
     if (dict.type === "hazard") {
-        //EALT
-        let field = `${dict.name}_EALT`;
-        let zData = data.map((d) => {
-            return { label: d.attributes.TRACTFIPS, ealt: d.attributes[field] };
-        });
-        console.log("build hazard chart", field, zData);
-        zData.sort((a, b) => a.ealt - b.ealt);
-        let zConfig = {
-            labels: chartData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
-            datasets: [
-                {
-                    label: `${dict.alias}`,
-                    data: zData.map((m) => m.ealt), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
-                    borderColor: "#e7a369", // Color of the line
-                },
-            ],
-        };
-
-        const zChart = bbbMap.getChart(zConfig, "line", `${dict.alias} Total EAL`, "Tract GEOID", "Expected Annual Loss", true);
-        container.appendChild(zChart);
+        field = `${dict.name}_EALT`;
+        datasetLabel = dict.alias;
+    } else {
+        const maxHazard = bbbMap.climateDictionary.find((d) => d.alias === ealtConfig.labels[0]);
+        field = `${maxHazard.name}_EALT`;
+        datasetLabel = maxHazard.alias;
     }
+
+    let zData = data.map((d) => {
+        return { label: d.attributes[label], x: d.attributes[field] };
+    });
+
+    console.log("build hazard chart", field, zData);
+    zData.sort((a, b) => b.x - a.x);
+
+    let zConfig = {
+        labels: zData.map((m) => m.label), //, "SOVI", "EAL", "RESL"],
+        datasets: [
+            {
+                label: `${datasetLabel}`,
+                data: zData.map((m) => m.x), //, data.attributes.EAL_SCORE, data.attributes.SOVI_SCORE, data.attributes.RESL_SCORE],
+                borderColor: "#e7a369", // Color of the line
+            },
+        ],
+    };
+
+    ({ block, chart } = bbbMap.getChart(zConfig, "line", `${dict.alias} Total EAL`, bbbMap.grain, "Expected Annual Loss"));
+    bbbMap.chart.singleHazardLossChart = chart;
+
+    bbbMap.hazardSelect = document.createElement("calcite-select");
+    bbbMap.hazardSelect.scale = "s";
+    ealtData.forEach((hazard) => {
+        const option = document.createElement("calcite-option");
+        option.value = hazard.alias;
+        option.innerHTML = hazard.alias;
+
+        if (hazard.alias === datasetLabel) {
+            option.selected = true;
+        }
+        bbbMap.hazardSelect.appendChild(option);
+    });
+
+    bbbMap.hazardSelect.addEventListener("calciteSelectChange", (e) => {
+        console.log("bbbMap.hazardSelect calciteSelectChange", e);
+        let hazard = `${e.target.value}`;
+        bbbMap.doChartHazardUpdate(hazard);
+    });
+
+    block.prepend(bbbMap.hazardSelect);
+    container.appendChild(block);
 };
 
 bbbMap.buildGroupByTables = function (data, config) {
@@ -2058,8 +2164,9 @@ bbbMap.buildGroupByTables = function (data, config) {
 bbbMap.getSummaryReport = async function () {
     console.log("getSummaryReport");
     Chart.defaults.color = "#bfbfbf";
+    //Chart.defaults.borderColor = "#e7a369";
     //if it's already built, and the filter is the same, just open the modal
-    if (bbbMap.summaryReportModal && bbbMap.histogramWhere === bbbMap.histogramWhereOld) {
+    if (bbbMap.summaryReportModal && bbbMap.histogramWhere === bbbMap.histogramWhereOld && bbbMap.focusArea === bbbMap.focusAreaOld) {
         bbbMap.summaryReportModal.open = true;
     } else {
         //otherwise, build the report
@@ -2078,7 +2185,7 @@ bbbMap.getSummaryReport = async function () {
         let where = bbbMap.histogramWhere ? bbbMap.histogramWhere : "1=1";
         const results = await bbbMap.tractShapeLayer.queryFeatures({ where: where });
         const data = results.features;
-
+        bbbMap.reportData = data;
         //get tract refernce data
         /*
         let ids = data.map((s) => s.attributes.TRACTFIPS);
@@ -2114,6 +2221,7 @@ bbbMap.getSummaryReport = async function () {
     }
 
     bbbMap.histogramWhereOld = bbbMap.histogramWhere;
+    bbbMap.focusAreaOld = bbbMap.focusArea;
 };
 
 bbbMap.climateDictionary = [
