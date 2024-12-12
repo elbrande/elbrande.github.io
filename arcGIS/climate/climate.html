@@ -6,7 +6,9 @@
 
         <title>3B Climate</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
         <!--
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
         -->
@@ -56,6 +58,21 @@
             .esri-histogram__label {
                 fill: var(--calcite-color-inverse);
             }
+
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+
+                #reportModal,
+                #reportModal * {
+                    visibility: visible;
+                }
+
+                #reportModal {
+                    position: static;
+                }
+            }
         </style>
     </head>
     <body class="calcite-mode-dark">
@@ -103,6 +120,14 @@
                     <div id="mainPanelContent"></div>
                 </calcite-panel>
                 <calcite-panel data-panel-id="filter" id="filterPanel" heading="Filters" closed closable>
+                    <calcite-action id="filterResetAction" text="Reset" icon="reset" slot="header-actions-end"></calcite-action>
+                    <calcite-action id="filterHelpAction" text="Help" icon="question-mark" slot="header-actions-end"></calcite-action>
+
+                    <calcite-block heading="Help" collapsible>
+                        <div id="filterPanelHelp">
+                            <p>Note: These filters are built based on what is visible in the map. For example, if only part of florida is visible, that will be the only state. In addition, only MSAs contained in the current view will be rendered.</p>
+                        </div>
+                    </calcite-block>
                     <div id="filterPanelContent">
                         <calcite-scrim id="filterScrim" loading hidden>Loading Filter...</calcite-scrim>
                     </div>
@@ -135,7 +160,11 @@
             <div id="successMsg" slot="message">Success Message</div>
         </calcite-alert>
 
-        <calcite-scrim id="bodyScrim" loading hidden>Getting Tracts...</calcite-scrim>
+        <calcite-scrim id="bodyScrim" loading hidden>Getting Features...</calcite-scrim>
+
+        <calcite-popover heading="Filter Help" label="Filter Help" reference-element="filterHelpAction" scale="s" closable auto-close>
+            <p>Only features visible in the current view will be included in the filters.</p>
+        </calcite-popover>
     </body>
 </html>
 <!--

@@ -1,0 +1,136 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+        <title>HistogramRangeSlider | Sample | ArcGIS Maps SDK for JavaScript 4.31</title>
+
+        <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" />
+        <script src="https://js.arcgis.com/4.31/"></script>
+
+        <style>
+            html,
+            body,
+            #viewDiv {
+                padding: 0;
+                margin: 0;
+                height: 100%;
+                width: 100%;
+            }
+
+            #controls {
+                width: 500px;
+            }
+
+            #outer-container {
+                padding: 15px;
+                width: 500px;
+            }
+
+            #description {
+                padding: 10px 10px 0px 10px;
+                font-size: 14pt;
+            }
+
+            #titleDiv {
+                padding: 10px;
+            }
+
+            #titleText {
+                font-size: 20pt;
+                font-weight: 60;
+                padding-bottom: 10px;
+            }
+        </style>
+
+        <script>
+            require(["esri/views/SceneView", "esri/Map", "esri/layers/FeatureLayer", "esri/widgets/Expand", "esri/widgets/HistogramRangeSlider", "esri/smartMapping/statistics/histogram"], (SceneView, Map, FeatureLayer, Expand, HistogramRangeSlider, histogram) => {
+                // flash flood warnings layer
+                const layer = new FeatureLayer({
+                    portalItem: {
+                        id: "fded240144c74ce988771a503a3a03d8",
+                    },
+                    outFields: ["Temp"],
+                    // only display surface temperature data
+                    definitionExpression: "UnitTop = 0",
+                });
+
+                const map = new Map({
+                    basemap: "dark-gray-vector",
+                    layers: [layer],
+                });
+
+                const view = new SceneView({
+                    map: map,
+                    container: "viewDiv",
+                    camera: {
+                        position: {
+                            spatialReference: {
+                                wkid: 3857,
+                            },
+                            x: 6639903,
+                            y: -3314595,
+                            z: 14625266,
+                        },
+                        heading: 0,
+                        tilt: 0.15,
+                    },
+                });
+
+                view.whenLayerView(layer).then((layerView) => {
+                    const field = "temp";
+                    const min = 0;
+                    const max = 30;
+
+                    histogram({
+                        layer: layer,
+                        field: field,
+                        numBins: 100,
+                        minValue: min,
+                        maxValue: max,
+                    }).then((histogramResponse) => {
+                        const slider = new HistogramRangeSlider({
+                            bins: histogramResponse.bins,
+                            min: min,
+                            max: max,
+                            values: [min, max],
+                            excludedBarColor: "#524e4e",
+                            rangeType: "between",
+                            container: document.getElementById("slider-container"),
+                        });
+
+                        slider.on(["thumb-change", "thumb-drag", "segment-drag"], (event) => {
+                            layerView.filter = {
+                                // generates the where clause for filtering features
+                                where: slider.generateWhereClause(field),
+                            };
+                        });
+
+                        const filterExpand = new Expand({
+                            view: view,
+                            content: document.getElementById("controls"),
+                            expandIcon: "filter",
+                            expanded: true,
+                        });
+
+                        view.ui.add(filterExpand, "bottom-left");
+                        view.ui.add("titleDiv", "top-right");
+                    });
+                });
+            });
+        </script>
+    </head>
+
+    <body>
+        <div id="viewDiv"></div>
+        <div id="titleDiv" class="esri-widget">
+            <div id="titleText">Ecological Marine Units</div>
+            <div>Indian Ocean</div>
+        </div>
+        <div id="controls" class="esri-widget">
+            <div id="description" class="esri-widget">Surface Temperature (°C)</div>
+            <div id="outer-container" class="esri-widget">
+                <div id="slider-container"></div>
+            </div>
+        </div>
+    </body>
+</html>
