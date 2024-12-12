@@ -576,6 +576,7 @@ bbbMap.ui = function () {
 
     let btn = document.createElement("calcite-button");
     btn.iconStart = "filter";
+    btn.label = "Filter by State or MSA";
     //btn.innerHTML = "Pre-Defined Areas";
     btn.title = "Use Pre-Defined Areas";
     btn.addEventListener("click", async (e) => {
@@ -584,7 +585,7 @@ bbbMap.ui = function () {
         filterPanel.closed = false;
         let h = document.getElementById("map").clientHeight;
         h = h * 0.7;
-        bbbMap.filterPanel.style.height = `${h}px`;
+        //bbbMap.filterPanel.style.height = `${h}px`;
 
         if (!bbbMap.filterTypeSelect) {
             //const filterBlock = bbbMap.getBlock("Filter By", false);
@@ -728,6 +729,7 @@ bbbMap.getCBSA = async function (cbsaType = "Metropolitan Statistical Area") {
             select.scale = "s";
             select.placeholder = "Select an MSA";
             select.selectionMode = "single";
+            select.overlayPositioning = "fixed";
 
             results.features.forEach((feature) => {
                 //let option = document.createElement("calcite-option");
@@ -891,6 +893,7 @@ bbbMap.getStates = async function () {
             select.scale = "s";
             select.placeholder = "Select a State";
             select.selectionMode = "single";
+            select.overlayPositioning = "fixed";
 
             results.features.forEach((feature) => {
                 //let option = document.createElement("calcite-option");
@@ -962,7 +965,7 @@ bbbMap.getCounties = async function (statefips) {
 
             option.value = feature.attributes.STCOFIPS;
             option.textLabel = `${feature.attributes.COUNTY}`;
-            option.selected = true;
+            //option.selected = true;
 
             select.appendChild(option);
         });
@@ -981,8 +984,8 @@ bbbMap.getCounties = async function (statefips) {
 
         bbbMap.stateFilter.appendChild(bbbMap.countyFilter);
 
-        let counties = select.selectedItems.map((i) => i.value);
-        bbbMap.applyFilter(counties);
+        //let counties = select.selectedItems.map((i) => i.value);
+        //bbbMap.applyFilter(counties);
     } catch (e) {
         bbbMap.showAlert("danger", `Error Getting County Filter`, `${e.message}`);
     } finally {

@@ -59,6 +59,10 @@
                 fill: var(--calcite-color-inverse);
             }
 
+            calcite-popover {
+                font-size: 14px;
+            }
+
             @media print {
                 body * {
                     visibility: hidden;
@@ -120,14 +124,9 @@
                     <div id="mainPanelContent"></div>
                 </calcite-panel>
                 <calcite-panel data-panel-id="filter" id="filterPanel" heading="Filters" closed closable>
-                    <calcite-action id="filterResetAction" text="Reset" icon="reset" slot="header-actions-end"></calcite-action>
-                    <calcite-action id="filterHelpAction" text="Help" icon="question-mark" slot="header-actions-end"></calcite-action>
+                    <calcite-action id="filterResetAction" text="Refresh" icon="reset" slot="header-actions-end" text-enabled></calcite-action>
+                    <calcite-action id="filterHelpAction" text="Help" icon="question-mark" slot="header-actions-end" text-enabled></calcite-action>
 
-                    <calcite-block heading="Help" collapsible>
-                        <div id="filterPanelHelp">
-                            <p>Note: These filters are built based on what is visible in the map. For example, if only part of florida is visible, that will be the only state. In addition, only MSAs contained in the current view will be rendered.</p>
-                        </div>
-                    </calcite-block>
                     <div id="filterPanelContent">
                         <calcite-scrim id="filterScrim" loading hidden>Loading Filter...</calcite-scrim>
                     </div>
@@ -162,11 +161,9 @@
 
         <calcite-scrim id="bodyScrim" loading hidden>Getting Features...</calcite-scrim>
 
-        <calcite-popover heading="Filter Help" label="Filter Help" reference-element="filterHelpAction" scale="s" closable auto-close>
+        <calcite-popover heading="Filter Help" label="Filter Help" reference-element="filterHelpAction" scale="s" placement="top-start" closable auto-close>
             <p>Only features visible in the current view will be included in the filters.</p>
+            <p>If you don't see the state/msa you are looking for, try zooming or panning to the area of interest. Then, you can refresh the filters using the refresh button.</p>
         </calcite-popover>
     </body>
 </html>
-<!--
-    auto-close-duration="fast" auto-close 
-    -->
