@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+        <title>MapBox K-Means Clustering</title>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/smoothness/jquery-ui.css" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+        <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+        <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
+
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            #map {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 100%;
+            }
+            #bbbMapParameters {
+                position: absolute;
+                z-index: 999;
+                top: 0;
+                bottom: 0;
+                width: 90%;
+                margin: 0 auto;
+                height: 1px;
+            }
+
+            #bbbLogger {
+                position: absolute;
+                right: 5px;
+                z-index: 999;
+                background-color: white;
+            }
+
+            .marker {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                cursor: pointer;
+                background-color: salmon;
+                opacity: 0.6 !important;
+            }
+
+            .cluster {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                cursor: pointer;
+                background-color: #3399ff;
+                opacity: 0.6 !important;
+                text-align: center;
+            }
+
+            .mapboxgl-popup {
+                max-width: 200px;
+                opacity: 0.75;
+            }
+
+            .mapboxgl-popup-content {
+                text-align: center;
+                font-family: "Open Sans", sans-serif;
+            }
+
+            .bbbText {
+                height: 28px;
+            }
+        </style>
+        <script src="locations.js"></script>
+        <script src="mapBoxKmeans.min.js"></script>
+    </head>
+    <body>
+        <!--The div element for the map -->
+
+        <div id="bbbMapParameters">
+            <label for="k" title="number of clusters">K</label>
+            <input type="text" class="ui-corner-all bbbText" id="k" />
+
+            <button title="Start" class="ui-button ui-widget ui-corner-all" id="startKmeans"><span class="ui-icon ui-icon-power"></span>Start</button>
+            <button title="Step" class="ui-button ui-widget ui-corner-all" id="stepKmeans"><span class="ui-icon ui-icon-power"></span>Step</button>
+            <button title="Run" class="ui-button ui-widget ui-corner-all" id="runKmeans"><span class="ui-icon ui-icon-power"></span>Run</button>
+            <button title="Log" class="ui-button ui-widget ui-corner-all" id="logger"><span class="ui-icon ui-icon-power"></span>Log</button>
+        </div>
+        <div id="bbbLogger"></div>
+
+        <div id="map"></div>
+    </body>
+</html>
