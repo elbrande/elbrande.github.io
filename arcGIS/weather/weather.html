@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>BBB Climate</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css">
+    <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+
+    <style>
+      html, body, #map {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      
+      body {display: flex;}
+      
+      
+      #chart-container, #chart-div {height: 600px;}
+      
+      #featureTableContainer {margin: 0 50px;}
+      
+      .esri-popup--is-docked {margin-right: 55px;}
+      .esri-ui-top-left {left: 40px;}
+      .full-height {height: 600px;}
+    </style>
+
+	<!-- cedar -->
+   <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+   <script src="https://www.amcharts.com/lib/3/serial.js"></script>
+   <script src="https://unpkg.com/@esri/cedar/dist/umd/themes/amCharts/calcite.js"></script>
+   <script src="https://unpkg.com/@esri/cedar/dist/umd/cedar.js"></script>
+
+   <!-- end cedar-->
+   <script src="https://js.arcgis.com/4.31/"></script>
+   <script src="weather.min.js"></script>
+  </head>
+  <body>
+<form action="wwv_flow.accept?p_context=ut/icons/17110063106989" method="post" name="wwv_flow" id="wwvFlowForm" data-oj-binding-provider="none" novalidate  autocomplete="off">
+   <input type="hidden" name="p_flow_id" value="2165" id="pFlowId" />
+   <input type="hidden" name="p_flow_step_id" value="60" id="pFlowStepId" />
+   <input type="hidden" name="p_instance" value="17110063106989" id="pInstance" />
+   <input type="hidden" name="p_page_submission_id" value="44662908983820161866035187173140524958" id="pPageSubmissionId" />
+   <input type="hidden" name="p_request" value="" id="pRequest" /><input type="hidden" name="p_reload_on_submit" value="S" id="pReloadOnSubmit" />
+   <input type="hidden" value="ut&#x2F;icons&#x2F;17110063106989" id="pContext" /><input type="hidden" value="44662908983820161866035187173140524958" id="pSalt" />
+
+<header></header>
+<div id="bodyContainer" class="calcite-mode-dark">
+    <calcite-shell id="outerShell" content-behind>
+		<calcite-block slot="header" heading="Weather Maps">
+			<calcite-icon slot="icon" icon="cloudy"></calcite-icon>
+	
+			<calcite-action-bar slot="header">
+				<calcite-action id="returnHome" text="Home" icon="HOME"></calcite-action>
+				<calcite-action id="userInfo" text="&APP_USER." slot="bottom-actions" icon="USER"></calcite-action>
+			</calcite-action-bar>
+		</calcite-block>
+		
+        <calcite-shell-panel id="leftShellPanel" slot="panel-start" display-mode="float">
+        <calcite-action-bar slot="action-bar">
+          <calcite-action-group>
+            <calcite-action data-action-id="layers" icon="gear" text="Layers"></calcite-action>
+            <calcite-action data-action-id="filters" icon="filter" text="Filters"></calcite-action>
+            <calcite-action data-action-id="sublayers" icon="layers" text="Sub-Layers"></calcite-action>
+          </calcite-action-group>
+
+          <calcite-action-group>
+             <calcite-action data-action-id="basemaps" icon="basemap" text="Basemaps"></calcite-action>
+             <calcite-action data-action-id="legend" icon="legend" text="Legend"></calcite-action>
+          </calcite-action-group>
+
+          <calcite-action id="close-table" slot="bottom-actions" icon="x-circle" text="Close" hidden></calcite-action>
+          <calcite-action data-action-id="log" slot="bottom-actions" icon="script" text="Log"></calcite-action>
+          <calcite-action data-action-id="print" slot="bottom-actions" icon="print" text="Print"></calcite-action>
+        </calcite-action-bar>
+        <!-- map-specific panels (each one provides a div for ArcGIS JavaScript API widgets) -->
+        <calcite-panel heading="Layers" data-panel-id="layers" closable closed>
+          <div id="layers-container">
+            <calcite-list id="layers-container-list" drag-enabled></calcite-list>
+          </div>
+             
+        </calcite-panel>
+        
+        <calcite-panel heading="Filters" data-panel-id="filters" closable closed>
+           <calcite-action id="resetFilters" slot="header-actions-end" text="Reset Filters" icon="reset"></calcite-action>
+           <calcite-label scale="s" layout="inline">Zoom to Results
+            <calcite-switch id="zoomToFilterResults"><calcite-switch>
+           </calcite-label>
+           
+           
+          <div class="full-height" id="filters-container"></div>
+        </calcite-panel>        
+        
+        <calcite-panel heading="Layers" data-panel-id="sublayers" closable closed>
+          <div id="sublayers-container"></div>
+        </calcite-panel>
+        
+        <calcite-panel heading="Basemaps" data-panel-id="basemaps" closable closed>
+          <div id="basemaps-container"></div>
+        </calcite-panel>
+        
+        <calcite-panel heading="Legend" data-panel-id="legend" closable closed>
+          <div id="legend-container"></div>
+        </calcite-panel>
+        
+        <calcite-panel heading="Log" data-panel-id="log" closable closed>
+          <div id="log-container"></div>
+        </calcite-panel>
+        
+        <calcite-panel heading="Print" data-panel-id="print" closable closed>
+          <div id="print-container"></div>
+        </calcite-panel>
+        
+      
+
+      </calcite-shell-panel>
+		<!---------------------------------Main--------------------------------->
+		
+		<div id="map"></div>
+		<div id="featureTableContainer"></div>
+        
+      	
+            
+		
+		<!---------------------------------END Main--------------------------------->
+      <!--Chart Panel
+<calcite-shell-center-row slot="center-row" class="center-row" height-scale="m" position="start" calcite-hydrated="" heightscale="m">
+   <calcite-action-bar slot="action-bar" hidden="" layout="vertical" calcite-hydrated=""/>
+   <div class="center-row-content">
+      <calcite-panel closable="" calcite-hydrated="" style="height: 100%;">
+         <calcite-action slot="header-actions-end" data-direction="up" appearance="solid" scale="m" calcite-hydrated=""/>
+         <calcite-action slot="header-actions-end" data-direction="down" appearance="solid" scale="m" calcite-hydrated=""/>
+      </calcite-panel>
+   </div>
+   <div slot="action-bar">
+      <arcgis-charts-action-bar disable-legend="" disable-filter-by-selection="" activate-selection="" disable-clear-selection="" class="hydrated">
+         <calcite-action slot="custom-action-top" appearance="solid" disabled="" scale="m" tabindex="-1" aria-disabled="true" calcite-hydrated="" active=""/>
+      </arcgis-charts-action-bar>
+   </div>
+</calcite-shell-center-row> 
+  
+      <!--end chart panel-->
+      <calcite-panel heading="Charts" closable>
+         <calcite-action slot="header-actions-end" text="Save" icon="save" indicator></calcite-action>
+         <calcite-action slot="header-actions-end" text-enabled icon="map" text="New" slot="menu-actions"></calcite-action>
+      </calcite-panel>        
+        <calcite-shell-panel id="rightShellPanel" slot="panel-end" position="end" display-mode="float">
+        <calcite-action-bar slot="action-bar">
+			<calcite-action-group>
+			  <!--<calcite-action data-action-id="search" icon="search" text="Search"></calcite-action>-->
+           <calcite-action data-modal-id="chart-modal" icon="graph-bar" text="Chart"></calcite-action>           
+			  <calcite-action data-action-id="sketch" icon="annotate-tool" text="Sketch"></calcite-action>
+           <calcite-action data-action-id="interact" icon="analysis" text="Interact"></calcite-action>
+			  <calcite-action data-action-id="style" icon="palette" text="Style"></calcite-action>
+			</calcite-action-group>
+			
+          <calcite-action data-modal-id="add-new-layer-modal" icon="add-layer" text="Add New Layer"></calcite-action>
+
+		  <calcite-action data-action-id="notice" icon="information" slot="bottome-actions" text="Notices"></calcite-action>
+          
+        </calcite-action-bar>
+        
+        <calcite-panel heading="Interact with Features" data-panel-id="interact" closable closed>
+          <calcite-action id="resetInteract" slot="header-actions-end" text="Reset Interaction" icon="reset"></calcite-action>
+            <calcite-block collapsible scale="s" heading="Help">
+               <calcite-list>
+               <calcite-list-item disabled label="Select" description="Select a WFS to interact with"></calcite-list-item>
+             </calcite-block>
+             <calcite-label scale="s" layout="inline">Feature Layer
+               <calcite-select id="interactLayer" scale="s">
+                  <calcite-option label="Select a WFS Feature Service" value="" selected></calcite-option>
+                  <calcite-option label="Weather" value="https://mapservices.weather.noaa.gov/vector/services/outlooks/natl_fcst_wx_chart/MapServer/WFSServer?request=GetCapabilities&service=WFS"></calcite-option>
+                  <calcite-option label="Atlantic Hurricanes" value="https://mapservices.weather.noaa.gov/tropical/services/tropical/NHC_tropical_weather/MapServer/WFSServer?request=GetCapabilities&service=WFS"></calcite-option>
+                  
+               </calcite-select>
+               </calcite-label>
+               
+               <calcite-loader id="interactLoader" type="indeterminate" hidden></calcite-loader>
+          <div id="interact-container"></div>
+        </calcite-panel>        
+
+        
+        <!---------------------------sketchVM--------------------------------<calcite-panel heading="SketchViewModel Styler" id="propPanel">-->
+        <calcite-panel heading="Sketch" data-panel-id="sketch" id="sketchPanel" closable closed>
+           <calcite-action id="resetSketch" slot="header-actions-end" text="Reset Style" icon="reset"></calcite-action>
+        
+            <calcite-block id="headingBlock">
+               <calcite-action icon="cursor"    title="Select graphic"     scale="m" slot="control" id="selectBtn"></calcite-action>
+               <calcite-action icon="polygon"   title="Draw a polygon"     scale="m" slot="control" id="polygonBtn"></calcite-action>
+               <calcite-action icon="rectangle" title="Draw a rectangle"   scale="m" slot="control" id="rectangleBtn"></calcite-action>
+               <calcite-action icon="circle"    title="Draw a circle"      scale="m" slot="control" id="circleBtn"></calcite-action>
+               <calcite-action icon="trash"     title="Clear graphics"     scale="m" slot="control" id="clearBtn"></calcite-action>
+            </calcite-block>
+            <calcite-accordion selection-mode="single">
+               <!--- defaultCreateOptions -->
+               <calcite-accordion-item heading="Sketch Settings">
+                  <calcite-label scale="s">Mode
+                     <calcite-select scale="s" id="mode-select">
+                        <calcite-option value="" selected disabled>choose mode</calcite-option>
+                        <calcite-option value="click">click</calcite-option>
+                        <calcite-option value="freehand">freehand</calcite-option>
+                        <calcite-option value="hybrid">hybrid</calcite-option>
+                     </calcite-select>
+                  </calcite-label>
+
+                  <calcite-label scale="s">Preserve Aspect Ratio
+                     <calcite-label layout="inline">True
+                       <calcite-switch scale="m" dir="rtl" id="aspectRatioSwitch"></calcite-switch>False
+                     </calcite-label>
+                  </calcite-label>
+
+                  <calcite-label scale="s">Enable Snapping
+                     <calcite-label layout="inline">True
+                       <calcite-switch scale="m" dir="rtl" id="enableSnappingSwitch"></calcite-switch>False
+                     </calcite-label>
+                  </calcite-label>                  
+                  
+               </calcite-accordion-item>
+               <!--- defaulteUpdateOptions -->
+
+               <!--- pointSymbol -->
+
+               <calcite-accordion-item heading="Shortcut Keys">
+                  <calcite-list>
+                     <calcite-list-item label="F" disabled description="Adds a vertex to the polyline or polygon graphic. Completes the rectangle or circle polygon graphic in click mode."></calcite-list-item>
+                     <calcite-list-item label="Enter" disabled description="Completes the polyline or polygon graphic sketch. Adds a point graphic at the pointer location."></calcite-list-item>
+                     <calcite-list-item label="Z" disabled description="Incrementally undo actions recorded in the stack."></calcite-list-item>
+                     <calcite-list-item label="R" disabled description="Incrementally redo actions recorded in the stack."></calcite-list-item>
+                     <calcite-list-item label="Ctrl" disabled description="Toggle snapping dependent on the configuration in snappingOptions."></calcite-list-item>
+                     <calcite-list-item label="Delete" disabled description="Remove the selected graphic(s) from the layer."></calcite-list-item>
+                     <calcite-list-item label="Shift+Left-click" disabled description="Select multiple graphics."></calcite-list-item>
+                  </calcite-list>     
+               </calcite-accordion-item>
+            </calcite-accordion>
+         </calcite-panel>
+     <!---------------------------sketchVM---------------------------------->
+        <calcite-panel heading="Style" data-panel-id="style" closable closed>
+          <calcite-action id="resetStyle" slot="header-actions-end" text="Reset Style" icon="reset"></calcite-action>
+          <div id="style-container">
+            <calcite-label scale="s">Layer
+               <calcite-select scale="s" id="styleLayerLOV" scale="l">
+                  <calcite-option label="Select a Layer" value="" selected></calcite-option>
+               </calcite-select>
+             </calcite-label>  
+             <calcite-block id="style">
+               
+               <calcite-label scale="s">Feature Size
+                  <calcite-slider id="iconSize" max="50" value="0"></calcite-slider>
+               </calcite-label>
+               
+               <calcite-label scale="s">Fill Color
+                  <calcite-input id="iconColor" type="color" value="#ff0000"></calcite-slider>
+               </calcite-label>
+
+               <calcite-label scale="s">Fill Opacity
+                  <calcite-slider id="iconOpacity" max="1" value="1" step="0.05" tick="0.1" snap></calcite-slider>
+               </calcite-label>
+               
+               <calcite-label scale="s">Outline Color
+                  <calcite-input id="iconOutlineColor" type="color" value="#ff0000"></calcite-slider>
+               </calcite-label>
+
+               <calcite-label scale="s">Outline Width
+                  <calcite-slider id="iconOutlineWidth" max="30" value="0"></calcite-slider>
+               </calcite-label>               
+          </div>
+        </calcite-panel>
+          
+        
+
+
+
+
+
+
+
+        
+        </calcite-shell-panel>
+
+        
+       <!-- <calcite-panel heading="Chart" data-panel-id="chart" closable closed>
+         <calcite-modal id="add-new-layer-modal" aria-labelledby="modal-title"  width="s" docked>
+         -->
+         
+            <calcite-dialog id="add-new-layer-modal" modal slot="dialogs" heading="Add a New Layer">
+
+            <div slot="">
+              <calcite-label scale="s">Layer Type
+                 <calcite-select scale="s" id="addWebServiceType" name="webservicetype">
+                   <calcite-option label="WMS Layer" value="wms"></calcite-option>
+                  <calcite-option label="GeoJSON Layer" value="geojson"></calcite-option>
+                  <calcite-option label="CSV Layer" value="csv"></calcite-option>
+                </calcite-select>
+              </calcite-label>
+              
+             <calcite-label scale="s">Title
+                 <calcite-input id="addWebServiceTitle" label="Title" name="layerTitle" type="text" clearable></calcite-sinput>
+              </calcite-label>
+              
+              <calcite-label scale="s">URL
+                 <calcite-text-area id="addWebServiceURL" label="URL" name="url" placeholder="Enter the URL or Copy/Paste CSV Data"></calcite-text-area>
+                 <!--<calcite-input id="addWebServiceURL" label="URL" name="url" type="textarea" required clearable></calcite-input>-->
+              </calcite-label>
+           </div>
+  
+            <calcite-button id="addLayerBtn" slot="primary" icon-start="add-layer" width="full">Add Layer</calcite-button>
+        </calcite-dialog>	
+
+       <calcite-dialog id="chart-modal" modal slot="dialogs" heading="Chart" width-scale="l">
+          
+         <div slot="">
+           <calcite-label scale="s" layout="inline">Layer
+              <calcite-select id="chartLayer" scale="s">
+                 <calcite-option label="Select a Layer" value="" selected></calcite-option>
+              </calcite-select>
+            </calcite-label>  
+            
+           <calcite-label id="chartFieldLabel" scale="s" layout="inline">Field
+              <calcite-select id="chartField" scale="s"></calcite-select>
+            </calcite-label>  
+
+            <calcite-block id="chartBlock">
+              <div id="chart-div"></div>
+            </calcite-block>
+        </div>
+
+              
+      <!--<calcite-button id="addLayerBtn" slot="primary" icon-start="add-layer" width="full">Add Layer</calcite-button>  
+         <div id="chart-container">
+           <calcite-label scale="s" layout="inline">Layer
+              <calcite-select id="chartLayer" scale="s">
+                 <calcite-option label="Select a Layer" value="" selected></calcite-option>
+              </calcite-select>
+            </calcite-label>  
+            
+           <calcite-label id="chartFieldLabel" scale="s" layout="inline">Field
+              <calcite-select id="chartField" scale="s"></calcite-select>
+            </calcite-label>  
+
+            <calcite-block id="chartBlock" open>
+              <div id="chart-div"></div>
+            </calcite-block>
+         </div>
+         -->
+      </calcite-dialog>       
+    </calcite-shell>
+</div>
+  
+
+  </body>
+</html>
