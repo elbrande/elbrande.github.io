@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <title>KMeans</title>
+
+        <style>
+            html,
+            body,
+            #map {
+                padding: 0;
+                margin: 0;
+                height: 100%;
+                width: 100%;
+            }
+
+            #bbbLogger {
+                overflow-y: auto;
+            }
+        </style>
+        <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+
+        <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" />
+
+        <script src="https://js.arcgis.com/4.31/"></script>
+        <script src="kmeans.min.js"></script>
+    </head>
+    <body class="calcite-mode-dark" style="visibility: hidden">
+        <div id="bbbMapParameters">
+            <calcite-label layout="inline"
+                >K
+                <calcite-input-text id="k" placeholder="Enter Number of Clusters" value="12" clearable autofocus>
+                    <calcite-button id="startKmeans" slot="action" icon-start="reset" round>Start</calcite-button>
+                    <calcite-button id="stepKmeans" slot="action" icon-start="pause" round>Step</calcite-button>
+                    <calcite-button id="runKmeans" slot="action" icon-start="play" round>Run</calcite-button>
+                    <calcite-button id="logger" slot="action" icon-start="access-string-results" round>Log</calcite-button>
+                </calcite-input-text>
+            </calcite-label>
+        </div>
+        <div id="bbbLogger"></div>
+        <div id="map"></div>
+    </body>
+</html>
