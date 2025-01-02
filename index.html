@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+        <title>3B Menu</title>
+        <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+        <link id="theme-dark" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" />
+
+        <style>
+            .grid {
+                margin: 0.75rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                grid-gap: 1rem;
+                justify-content: space-evenly;
+            }
+        </style>
+    </head>
+
+    <body class="calcite-mode-dark">
+        <calcite-shell content-behind>
+            <calcite-navigation slot="header" id="bbbNavigation">
+                <calcite-navigation-logo slot="logo" id="logo" heading="3B"></calcite-navigation-logo>
+
+                <calcite-menu id="navigationMenu" slot="content-start">
+                    <calcite-menu-item text="Menu" id="appName" label="app" icon-start=""></calcite-menu-item>
+                </calcite-menu>
+            </calcite-navigation>
+
+            <calcite-block heading="API Solutions" open collapsible>
+                <div id="menu" class="grid">
+                    <calcite-card>
+                        <img slot="thumbnail" alt="Climate Screenshot" src="img/climate.png" />
+                        <span slot="heading">ArcGIS Climate</span>
+                        <span slot="description">Quickly understand the climate risks for an area</span>
+                        <p>Look up an address using the Census Bureau's geocoder, get demographics for the tract using FFIEC's geocoder APIs</p>
+                        <p>Explore Climate Risk and Social Vulnerability in surrounding tracts using a default distance or draw your shape to define an area.</p>
+                        <p>Once an area is defined, view a summary report to visualize the overall climate risks for the area.</p>
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="arcGIS/climate/climate.html" icon-start="rain"> 3B Climate Analysis </calcite-button>
+                        </div>
+                    </calcite-card>
+
+                    <calcite-card>
+                        <span slot="heading">ArcGIS Weather</span>
+                        <img slot="thumbnail" alt="Weather Screenshot" src="img/weather.png" />
+                        <span slot="description">Interact with weather shapes, filter features using shapes, and add your own layers.</span>
+                        <p>Explore current weather. Add your own layer and dynamically style features. You can also filter features based on weather shapes.</p>
+                        <p>This solution uses a configuration file to drive the creation of the map and all layers. This allows configuration files to be managed and saved in a database. This single map can then request the configuration file by name and dynamically render any type of map with multiple layers.</p>
+
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="arcGIS/weather/weather.html" icon-start="annotate-tool"> 3B Weather Analysis</calcite-button>
+                        </div>
+                    </calcite-card>
+
+                    <calcite-card>
+                        <span slot="heading">ArcGIS Bank Branches</span>
+                        <img slot="thumbnail" alt="Branches Screenshot" src="img/branches.png" />
+                        <span slot="description">Explore bank branches and surrounding census tract demographics.</span>
+                        <p>Find all branch locations for a bank. Explore surrounding census tracts and find nearby branches from other banks.</p>
+
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="arcGIS/branch-analysis/map.html" icon-start="credit-card"> 3B Branch Analysis </calcite-button>
+                        </div>
+                    </calcite-card>
+
+                    <calcite-card>
+                        <span slot="heading">ArcGIS KMeans</span>
+                        <img slot="thumbnail" alt="mapBox Screenshot" src="img/kmeans.png" />
+                        <span slot="description">Use the KMeans algorithm to optimize k clusters to minimize distance to locations</span>
+                        <p>Run a geospatial of KMeans to minimize disance to locations.</p>
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="arcGIS/kmeans/kmeans.html" icon-start="function"> 3B KMeans Clusters </calcite-button>
+                        </div>
+                    </calcite-card>
+
+                    <calcite-card>
+                        <img slot="thumbnail" alt="Climate Screenshot" src="img/mapBoxKmeans.png" />
+                        <span slot="heading">MapBox KMeans</span>
+                        <span slot="description">Use the k-means algorithm with MapBox to optimize k clusters to optimize locations.</span>
+
+                        <div slot="footer-start">
+                            <calcite-button round width="full" kind="brand" href="mapBox/kmeans.html" icon-start="rain"> 3B MapBox Kmeans Clusters </calcite-button>
+                        </div>
+                    </calcite-card>
+                </div>
+            </calcite-block>
+        </calcite-shell>
+    </body>
+</html>

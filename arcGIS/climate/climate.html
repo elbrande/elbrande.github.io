@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+        <title>3B Climate</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <!--
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+        -->
+        <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+
+        <script src="https://js.arcgis.com/4.31/"></script>
+
+        <link id="theme-dark" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" />
+        <link id="theme-light" rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" disabled />
+
+        <script src="climate.min.js?v2.0"></script>
+
+        <style>
+            html,
+            body,
+            #map {
+                padding: 0;
+                margin: 0;
+                height: 100%;
+                width: 100%;
+            }
+
+            #parameters {
+                display: flex;
+                height: auto;
+                gap: 2rem;
+            }
+
+            #address {
+                width: 350px;
+            }
+
+            .searchCardContainer {
+                margin: 0.75rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                grid-gap: 1rem;
+                justify-content: space-evenly;
+            }
+
+            calcite-scrim {
+                --calcite-scrim-background: rgba(153, 153, 153, 0.05);
+                color: white;
+            }
+
+            .esri-histogram__label {
+                fill: var(--calcite-color-inverse);
+            }
+
+            calcite-popover {
+                font-size: 14px;
+            }
+
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+
+                #reportModal,
+                #reportModal * {
+                    visibility: visible;
+                }
+
+                #reportModal {
+                    position: static;
+                }
+            }
+        </style>
+    </head>
+    <body class="calcite-mode-dark">
+        <header></header>
+
+        <calcite-loader label="loading map" text="Loading Maps"></calcite-loader>
+
+        <calcite-shell content-behind>
+            <calcite-navigation slot="header" id="bbbNavigation">
+                <calcite-navigation-logo slot="logo" id="logo" heading="3B"></calcite-navigation-logo>
+
+                <calcite-menu id="navigationMenu" slot="content-start">
+                    <calcite-menu-item text="Climate" id="appName" label="app" icon-start="map"></calcite-menu-item>
+                </calcite-menu>
+            </calcite-navigation>
+
+            <calcite-shell-panel id="leftShellPanel" slot="panel-start" position="start" display-mode="float">
+                <!-- map-specific panels (each one provides a div for ArcGIS JavaScript API widgets) 
+                <calcite-panel data-panel-id="tabPanel" id="tabPanel" heading="Tabs" open>
+                    <calcite-tabs>
+                        <calcite-tab-nav slot="title-group">
+                            <calcite-tab-title selected> Watercraft </calcite-tab-title>
+                            <calcite-tab-title>Automobiles</calcite-tab-title>
+                            <calcite-tab-title>Aircrafts</calcite-tab-title>
+                        </calcite-tab-nav>
+                        <calcite-tab selected>
+                            <calcite-notice icon="embark" open>
+                                <div slot="message">Recommended for coastal use</div>
+                            </calcite-notice>
+                        </calcite-tab>
+                        <calcite-tab>
+                            <calcite-notice icon="car" open>
+                                <div slot="message">A good choice for inland adventure</div>
+                            </calcite-notice>
+                        </calcite-tab>
+                        <calcite-tab>
+                            <calcite-notice icon="plane" open>
+                                <div slot="message">Cross continents quickly</div>
+                            </calcite-notice>
+                        </calcite-tab>
+                    </calcite-tabs>
+                </calcite-panel>
+                -->
+                <calcite-panel data-panel-id="main" id="mainPanel" heading="Results" closed closable>
+                    <div id="mainPanelContent"></div>
+                </calcite-panel>
+                <calcite-panel data-panel-id="filter" id="filterPanel" heading="Filters" closed closable>
+                    <calcite-action id="filterResetAction" text="Refresh" icon="reset" slot="header-actions-end" text-enabled></calcite-action>
+                    <calcite-action id="filterHelpAction" text="Help" icon="question-mark" slot="header-actions-end" text-enabled></calcite-action>
+
+                    <div id="filterPanelContent">
+                        <calcite-scrim id="filterScrim" loading hidden>Loading Filter...</calcite-scrim>
+                    </div>
+                </calcite-panel>
+            </calcite-shell-panel>
+            <!---------------------------------Main--------------------------------->
+            <div id="parameters" style="display: none">
+                <calcite-label layout="inline"
+                    >Address
+                    <calcite-input-text id="address" placeholder="Enter Address" value="3501 Fairfax Drive, Arlington, VA 22226" clearable autofocus>
+                        <calcite-button id="getGeocodeBtn" slot="action">Go</calcite-button>
+                    </calcite-input-text>
+                </calcite-label>
+            </div>
+            <div id="map"></div>
+
+            <calcite-alert kind="brand" label="success" alot="alerts" id="alert" queue="immediate" icon>
+                <div id="alertTitle" slot="title">Title</div>
+                <div id="alertMsg" slot="message">Message</div>
+            </calcite-alert>
+        </calcite-shell>
+
+        <calcite-alert kind="danger" label="alert" id="errorAlert" queue="immediate" icon>
+            <div id="errorTitle" slot="title">Error</div>
+            <div id="errorMsg" slot="message">Sample Error Message</div>
+        </calcite-alert>
+
+        <calcite-alert kind="success" label="success" id="successAlert" queue="immediate" icon>
+            <div id="successTitle" slot="title">Success</div>
+            <div id="successMsg" slot="message">Success Message</div>
+        </calcite-alert>
+
+        <calcite-scrim id="bodyScrim" loading hidden>Getting Features...</calcite-scrim>
+
+        <calcite-popover heading="Filter Help" label="Filter Help" reference-element="filterHelpAction" scale="s" placement="top-start" closable auto-close>
+            <p>Only features visible in the current view will be included in the filters.</p>
+            <p>If you don't see the state/msa you are looking for, try zooming or panning to the area of interest. Then, you can refresh the filters using the refresh button.</p>
+        </calcite-popover>
+    </body>
+</html>
