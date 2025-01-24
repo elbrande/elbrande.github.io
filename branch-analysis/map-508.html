@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="BLAM Branch Location Assessment Map Residential Access to Banking Services 508-compliant" />
+        <title>508-Compliant HTML Template</title>
+        <!--
+        <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.2.1/css/dataTables.dataTables.min.css" />
+        <script src="https://cdn.datatables.net/2.2.1/js/dataTables.min.js"></script>
+
+        <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+
+        <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />        
+        -->
+
+        <script src="https://js.arcgis.com/4.31/"></script>
+        <script src="map-508.js?v1.0.0"></script>
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                line-height: 1.6;
+            }
+            header,
+            main,
+            footer {
+                padding: 20px;
+            }
+            nav ul {
+                list-style: none;
+                padding: 0;
+            }
+            nav ul li {
+                margin-bottom: 10px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            table th,
+            table td {
+                border: 1px solid #ddd;
+                padding: 10px;
+                text-align: left;
+            }
+            table th {
+                background-color: #f4f4f4;
+            }
+            .form-group {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            li {
+                display: inline;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>BLAM 2.0 Accessible</h1>
+            <p>Welcome to the 508 compliant version of BLAM 2.0</p>
+        </header>
+
+        <nav>
+            <ul id="nav-list">
+                <li><a id="branchSearchNav" data-section-id="branchSearch" href="#dropdown-section">Bank Search</a></li>
+                <li><a id="affectedTractshNav" data-section-id="affectedTracts" href="#table-section">Affected Tracts</a></li>
+                <li><a id="nearbyBranchesNav" data-section-id="nearbyBranches" href="#links-section">Nearby Branches</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section id="branchSearch" class="blam-section">
+                <form id="branchSearchForm" action="#" method="get" aria-labelledby="form-heading">
+                    <fieldset>
+                        <legend id="form-heading">Bank Search</legend>
+
+                        <!-- Input Text Field -->
+                        <div class="form-group">
+                            <label for="cert">Cert:</label>
+                            <input type="text" value="913" id="bankSearchCert" name="cert" aria-required="true" placeholder="Enter Bank Cert " required />
+
+                            <button id="bankSearchBtn" aria-label="Search">Search</button>
+                        </div>
+                    </fieldset>
+                </form>
+                <section id="branchSearchContent"></section>
+            </section>
+
+            <section id="affectedTracts" class="blam-section">
+                <div id="affectedTractsContent">Please select a branch to assess.</div>
+            </section>
+
+            <section id="nearbyBranches" class="blam-section">
+                <div id="nearbyBranchesContent">Please select a tract.</div>
+            </section>
+
+            <!-- Drop-down List Section -->
+
+            <!-- Table Section -->
+        </main>
+
+        <footer>
+            <p>&copy; 2025 BLAM 2.0 508 Compliant Version.</p>
+        </footer>
+    </body>
+</html>
