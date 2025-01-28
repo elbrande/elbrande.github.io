@@ -140,7 +140,7 @@ bbbMap.clearResults = function (ids = [bbbMap.branchSearchID, bbbMap.censusTract
 };
 
 bbbMap.hideSectionAll = function () {
-    document.querySelectorAll("section.blam-section").forEach((p) => {
+    document.querySelectorAll("section.bbb-section").forEach((p) => {
         console.log("Hide Section", p.id);
         p.style.display = "none";
         document.getElementById(`${p.id}Nav`).classList.remove("btn-active");
