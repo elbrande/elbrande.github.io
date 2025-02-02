@@ -20,7 +20,7 @@
         <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
         <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
         <script src="https://js.arcgis.com/4.31/"></script>
-        <script src="map-508.js?v1.0.0"></script>
+        <script src="map-508.min.js?v1.0.0"></script>
 
         <style>
             body {
@@ -65,29 +65,78 @@
             }
             .btn-active {
                 background-color: #20509e;
+                background-color: var(--calcite-ui-brand);
                 color: white;
             }
             .hidden {
                 display: none;
             }
+            .tab-container {
+                width: 100%;
+                border-bottom: 1px solid #ccc;
+                display: flex;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .tab {
+                padding: 10px 20px;
+                cursor: pointer;
+                background: #f1f1f1;
+                border: 1px solid #ccc;
+                border-bottom: none;
+                margin-right: 5px;
+                border-radius: 5px 5px 0;
+                transition: background 0.3s;
+                
+            }
+
+            .tab[aria-selected="true"] {
+                background: #20509e;
+                background: var(--calcite-ui-brand);
+                color: var(--calcite-ui-foreground-1);
+                border-bottom: 1px solid white;
+
+            }
+
+            .tab:hover, tab:focus {
+                background: #20509e;
+                background:  var(--calcite-color-brand-hover);                
+                color: var(--calcite-ui-foreground-1);
+                border: 1px solid #b7ac83;
+                outline: none;
+                
+            }
+
+            .tab-content {
+                display: none;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-top: none;
+            }
+
+            .tab-content[aria-hidden="false"] {
+                display: block;
+            }
         </style>
     </head>
     <body>
         <header>
-            <h1>BBB 2.0</h1>
+            <h1>BBB Branches 508</h1>
             <h2></h2>
         </header>
 
         <nav>
-            <ul id="nav-list">
+            <ul id="nav-list" class="tab-container" role="tablist">
                 <!--
                 <li><a id="branchSearchNav" data-section-id="branchSearch" href="#dropdown-section">Bank Search</a></li>
                 <li><a id="affectedTractshNav" data-section-id="affectedTracts" href="#table-section">Affected Tracts</a></li>
                 <li><a id="nearbyBranchesNav" data-section-id="nearbyBranches" href="#links-section">Nearby Branches</a></li>
             -->
-            <li><button id="branchSearchNav" data-section-id="branchSearch" aria-label="Bank Search" accesskey="b"><u>B</u>ank Search</a></li>
-            <li><button id="affectedTractsNav" data-section-id="affectedTracts" aria-label="Affected Tracts" accesskey="a"><u>A</u>ffected Tracts</a></li>
-            <li><button id="nearbyBranchesNav" data-section-id="nearbyBranches" aria-label="Nearby Branches" accesskey="n"><u>N</u>earby Branches</a></li>
+            <li><button class="tab" role="tab" tabindex="0" aria-controls="branchSearch" aria-selected="true" id="branchSearchNav" data-section-id="branchSearch" aria-label="Bank Search" accesskey="b"><u>B</u>ank Search</a></li>
+            <li><button class="tab" role="tab" tabindex="-1" aria-controls="affectedTracts" aria-selected="false" id="affectedTractsNav" data-section-id="affectedTracts" aria-label="Affected Tracts" accesskey="a"><u>A</u>ffected Tracts</a></li>
+            <li><button class="tab" role="tab" tabindex="-1" aria-controls="nearbyBranches" aria-selected="false" id="nearbyBranchesNav" data-section-id="nearbyBranches" aria-label="Nearby Branches" accesskey="n"><u>N</u>earby Branches</a></li>
             
             </ul>
 
@@ -108,14 +157,14 @@
                 </fieldset>
             </section>  
 Input Text Field -->
-            <section id="branchSearch" class="bbb-section">
+            <section id="branchSearch" class="bbb-section tab-content" role="tabpanel" aria-labelledby="Branch Search" aria-hidden="false">
                 <form id="branchSearchForm" action="#" method="get" aria-labelledby="form-heading">
                     <fieldset>
                         <legend id="form-heading">Bank Search</legend>
 
                         <!-- Input Text Field -->
                         <div class="form-group">
-                            <calcite-label layout="inline">
+                            <calcite-label layout="">
                                 Cert 
                                 <calcite-input id="bankSearchCert" value="913" name"cert" placeholder="Enter Bank Cert" required>
                                     <calcite-button id="bankSearchBtn" icon-start="search" slot="action">Search</calcite-button>
@@ -136,13 +185,13 @@ Input Text Field -->
                 <section id="branchSearchContent"></section>
             </section>
 
-            <section id="affectedTracts" class="bbb-section">
+            <section id="affectedTracts" class="bbb-section tab-content" role="tabpanel" aria-labelledby="Affected Tracts" aria-hidden="true">
                 <div id="affectedTractsHeader">Please select a branch to assess.</div>
                 <div id="affectedTractsTable"></div>
                 <div id="affectedTractsContent"></div>
             </section>
 
-            <section id="nearbyBranches" class="bbb-section">
+            <section id="nearbyBranches" class="bbb-section tab-content" role="tabpanel" aria-labelledby="Nearby Branches" aria-hidden="true">
                 <div id="nearbyBranchesHeader">Please select a tract.</div>
                 <div id="nearbyBranchesTable"></div>
                 <div id="nearbyBranchesContent"></div>
