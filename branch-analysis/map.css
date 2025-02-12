@@ -1,0 +1,46 @@
+:root {
+    --calcite-color-brand: #ffff00 ;
+}
+html,
+body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#appContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.pane {
+    flex: 1;
+    overflow: auto;
+}
+
+#map {
+    flex-basis: 60%;
+    width: 100%;
+}
+
+#featureTableContainer {
+    flex-basis: 40%;
+    margin-left: 50px;
+}
+
+#divider {
+    height: 5px;
+    cursor: row-resize;
+    background-color: #888;
+}
+
+.searchCardContainer {
+    margin: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-gap: 1rem;
+    justify-content: space-evenly;
+}
