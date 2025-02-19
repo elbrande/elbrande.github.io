@@ -53,6 +53,7 @@
                         <calcite-action-group>
                             <calcite-action data-action-id="sublayers" icon="layers" text="Sub-Layers"></calcite-action>
                             <calcite-action data-action-id="basemaps" icon="basemap" text="Basemaps"></calcite-action>
+                            <calcite-action data-action-id="overlays" icon="analysis-overlay" text="Overlay Layers"></calcite-action>
                             <calcite-action data-action-id="legend" icon="legend" text="Legend"></calcite-action>
                         </calcite-action-group>
 
@@ -117,6 +118,19 @@
 
                     <calcite-panel heading="Basemaps" data-panel-id="basemaps" closable closed hidden>
                         <div id="basemaps-container"></div>
+                    </calcite-panel>
+
+                    <calcite-panel heading="Overlay Layers" data-panel-id="overlays" closable closed hidden>
+                        <div>
+                            <calcite-label>
+                                <calcite-select id="overlaySelect" name="overlays" label="Map Overlay">
+                                    <calcite-option value="" selected>-Select an Overlay -</calcite-option>
+                                    <calcite-option data-layer-type="feature" value="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/ACS_Internet_Connectivity_Boundaries/FeatureServer/2">Access to Internet</calcite-option>
+                                    <calcite-option data-layer-type="feature" value="https://services.arcgis.com/XG15cJAlne2vxtgt/ArcGIS/rest/services/National_Risk_Index_Census_Tracts/FeatureServer/0">FEMA National Risk Index (NRI)</calcite-option>
+                                    <calcite-option data-layer-type="feature" value="https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/9">Hurricanes</calcite-option>
+                                </calcite-select>
+                            </calcite-label>
+                        </div>
                     </calcite-panel>
 
                     <calcite-panel heading="Legend" data-panel-id="legend" closable closed hidden>
