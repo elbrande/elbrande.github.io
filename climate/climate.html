@@ -6,8 +6,11 @@
 
         <title>3B Climate</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
         <!--
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
@@ -120,6 +123,19 @@
                     </calcite-tabs>
                 </calcite-panel>
                 -->
+                <calcite-panel data-panel-id="tips" id="tips" heading="Tips" closable>
+                    <div id="tipsContent">
+                        <calcite-notice open icon="question">
+                            <div slot="message">
+                                <p>Use the drawing tools in the upper right to explore an area or right click anywhere on the map and click Nearby Tracts in the popup. Alternatively, use the pre-defined filters in the upper left to view natural hazards by MSA and counties.</p>
+                                <p>Once you select an area, use the "Climate Risk Area" drop down in the upper right to explore various risks and indexes.</p>
+                                <p>You can use the histogram in the bottom left to refine the area by dragging either end of the slider.</p>
+                                <p>Finally, you can click on "Summary Report" in the bottom to view a summary report and charts for the area. <br /><i>Note: the histogram slider will affect the report results.</i></p>
+                            </div>
+                        </calcite-notice>
+                    </div>
+                </calcite-panel>
+
                 <calcite-panel data-panel-id="main" id="mainPanel" heading="Results" closed closable>
                     <div id="mainPanelContent"></div>
                 </calcite-panel>
